@@ -13,11 +13,11 @@ import { BRAND_NAME } from "@/lib/brand";
 import { PRIORITIES } from "@/lib/scope/schema";
 
 // Same tokens as src/app/globals.css; the PDF is white for printing.
-const INK = "#1E2638";
-const SOFT = "#545C6E";
-const RULE = "#D8DBD2";
-const PEN = "#2B44D6";
-const HIGHLIGHT = { must: "#FFE14D", should: "#A6EBC9", could: "#D7C9FF" } as const;
+const INK = "#1D3A2A";
+const SOFT = "#4B6352";
+const RULE = "#CFDDC6";
+const PEN = "#2E7A44";
+const HIGHLIGHT = { must: "#F7D24A", should: "#B9E29A", could: "#BFE0EE" } as const;
 const BODY = 10.5;
 
 const s = StyleSheet.create({
@@ -29,7 +29,7 @@ const s = StyleSheet.create({
   title: { fontSize: 26, fontWeight: 800, lineHeight: 1.1, marginTop: 18, letterSpacing: -0.4 },
   summary: { fontSize: 12, lineHeight: 1.4, marginTop: 8 },
   meta: { fontSize: 9.5, color: SOFT, marginTop: 6 },
-  priceBox: { marginTop: 18, borderWidth: 1.5, borderColor: INK, borderRadius: 4, padding: 16 },
+  priceBox: { marginTop: 18, borderWidth: 1.5, borderColor: PEN, borderTopLeftRadius: 14, borderBottomRightRadius: 14, borderTopRightRadius: 4, borderBottomLeftRadius: 4, padding: 16 },
   tiers: { flexDirection: "row", columnGap: 24 },
   tier: { flex: 1 },
   tierName: { fontSize: 11, fontWeight: 600 },

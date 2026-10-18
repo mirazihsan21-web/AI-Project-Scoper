@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, type FormEvent } from "react";
+import { Sprout } from "@/components/nature";
 import { SAMPLE_BRIEFS } from "@/lib/samples";
 
 const MIN = 20;
@@ -56,8 +57,8 @@ export function BriefForm() {
   }
 
   return (
-    <form onSubmit={submit} className="mt-10" noValidate>
-      <label htmlFor="brief" className="sr-only">
+    <form onSubmit={submit} noValidate>
+      <label htmlFor="brief" className="text-lg font-bold">
         Your project brief
       </label>
       <textarea
@@ -66,37 +67,33 @@ export function BriefForm() {
         value={brief}
         onChange={(e) => setBrief(e.target.value)}
         maxLength={MAX}
-        rows={10}
+        rows={9}
         disabled={pending}
         aria-describedby={`${hintId}${error ? ` ${errorId}` : ""}`}
         aria-invalid={error ? true : undefined}
         placeholder="Paste a client email, call notes or a WhatsApp chat. Messy is fine."
-        className="block w-full resize-y rounded-md border-2 border-ink bg-white px-4 py-3 text-lg leading-relaxed text-ink shadow-[4px_4px_0_0_var(--color-ink)] placeholder:text-ink-soft disabled:opacity-60"
+        className="mt-2 block w-full resize-y rounded-2xl border-2 border-rule bg-white px-4 py-3 text-base leading-relaxed text-forest placeholder:text-moss focus:border-fern sm:text-lg disabled:opacity-60"
       />
+      <p id={hintId} className="mt-2 text-right text-sm text-moss">
+        {brief.length.toLocaleString("en-US")} / {MAX.toLocaleString("en-US")} characters
+      </p>
 
-      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-sm text-ink-soft">
-        <p>
-          No brief handy? Try{" "}
-          {SAMPLE_BRIEFS.map((sample, i) => (
-            <span key={sample.label}>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => {
-                  setBrief(sample.brief);
-                  setError(null);
-                }}
-                className="font-semibold text-pen underline decoration-2 underline-offset-4 hover:text-pen-dark disabled:opacity-60"
-              >
-                {sample.label}
-              </button>
-              {i < SAMPLE_BRIEFS.length - 2 ? ", " : i === SAMPLE_BRIEFS.length - 2 ? " or " : "."}
-            </span>
-          ))}
-        </p>
-        <p id={hintId}>
-          {brief.length.toLocaleString("en-US")} / {MAX.toLocaleString("en-US")} characters
-        </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-sm text-moss">No brief handy? Try</span>
+        {SAMPLE_BRIEFS.map((sample) => (
+          <button
+            key={sample.label}
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              setBrief(sample.brief);
+              setError(null);
+            }}
+            className="rounded-full border border-fern/40 bg-white px-3 py-1 text-sm font-semibold text-fern hover:border-fern hover:bg-fern hover:text-white disabled:opacity-60"
+          >
+            {sample.label}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -105,15 +102,16 @@ export function BriefForm() {
         </p>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-pen px-6 py-3 text-lg font-bold text-white hover:bg-pen-dark disabled:cursor-wait disabled:opacity-80"
+          className="rounded-full bg-fern px-7 py-3 text-lg font-bold text-white hover:bg-fern-dark disabled:cursor-wait disabled:opacity-90"
         >
           {pending ? "Scoping…" : "Scope my project"}
         </button>
-        <p aria-live="polite" className="text-ink-soft">
+        <p aria-live="polite" className="flex items-center gap-2 text-moss">
+          {pending && <Sprout className="size-6 shrink-0" />}
           {pending ? `${STEPS[step]}…` : "Takes about 5 seconds."}
         </p>
       </div>

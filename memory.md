@@ -13,7 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
-- **Current phase:** Steps 0–7 are done (hardened and fully tested locally). Step 8 (deploy to Vercel + case study) is next.
+- **Current phase:** Steps 0–7 are done, plus the nature-theme redesign. Step 8 (deploy to Vercel + case study) is next.
 
 ## 2. Decisions log
 
@@ -42,7 +42,9 @@
 | 2026-10-19 | **Browsers never talk to Supabase.** The server uses the **secret key** (`SUPABASE_SECRET_KEY`, `sb_secret_…`) through `getDb()` (`import "server-only"`). RLS is on with no policies, and anon/authenticated have **no grants** | Simplest secure model: the public API exposes nothing. Integration tests assert 42501 for the publishable key |
 | 2026-10-19 | Tables: `scopes` (uuid v4 id = share link; stores an `estimate` snapshot), `leads` (bigint id, `notified_at` for email retry), `scope_requests` (bigint id, **salted IP hash**) replacing the planned `rate_limits` | Unguessable links. Old quotes stay as shown even if rates change. Rate limiting counts every attempt, including failed ones, and never stores raw IPs |
 | 2026-10-19 | Deploy Vercel functions in **icn1 (Seoul)** to sit next to the database | The DB is in ap-northeast-2 |
-| 2026-10-19 | **Design: "marked up with highlighters".** Yellow/mint/lavender highlighter = must/should/could and means nothing else; pen blue `#2B44D6` = clickable; paper `#F6F7F4`, ink `#1E2638`; one family, **Schibsted Grotesk**; single left-aligned column about 720px; the price box is the only boxed element; one motion moment (must-haves get swept on arrival, static with reduced motion). Tokens live in `src/app/globals.css` | frontend-design skill: distinctive and tied to the subject (marking up a plan); avoids cream+serif, uppercase eyebrows, mono labels, card grids |
+| 2026-10-19 | ~~Design v1: "marked up with highlighters" (paper/ink/pen blue)~~ **Superseded** by the nature theme below | User: "the UI is too simple" |
+| 2026-10-19 | **Design v2: lively nature theme** (user request). Tokens in `src/app/globals.css`: mist bg `#F1F6EC` with a sky-wash gradient at the top of every page, forest text `#1D3A2A`, moss secondary `#4B6352`, **fern `#2E7A44` = clickable**, highlighters **sun `#F7D24A` = must, leaf `#B9E29A` = should, sky `#BFE0EE` = could** (still priority-only). Still Schibsted Grotesk. Leaf-shaped panels (`.leaf`: two rounded corners on one diagonal) only for the brief form, price card and Book a call. Pill buttons. Motion: landscape (sun rising behind hills, drifting clouds) on the home hero, a sprout that grows while scoping, and the must-have sweep; all off with reduced motion. Art in `src/components/nature.tsx`. The PDF uses the same palette | User asked for "live and nature theme" that "looks good" without unnecessary extras |
+| 2026-10-19 | **Responsive layout (user request):** logo (leaf mark + "Scoper") pinned **top-left on every device** in a full-width header (`px-5 sm:px-8 lg:px-12`). Home: intro + preview left, brief form right on `lg`, stacked on phones (DOM order intro → form → preview). Scope page: content left with a **sticky price card sidebar** on `lg`, price first on phones; features and integrations in 2 columns on `md+`; delivery plan as a vine timeline. Content `max-w-6xl` | Use the space on large screens; keep phones simple |
 | 2026-10-19 | `POST /api/scope` logic lives in `handleScopeRequest` (`src/lib/scope/request.ts`), free of Next.js and unit-tested. The route only wires deps. Order: validate (400) → rate limit (429 + Retry-After) → generate → price → save (201 `{id}`). Errors: 422 injection, 503 + Retry-After when all models are busy, 502 no valid scope, 500 other | Every outcome is testable. A typo never uses up quota |
 | 2026-10-19 | `/s/[id]` awaits params inside `<Suspense>`; `loadScope` is `"use cache"` with `cacheLife("max")` when found and `"seconds"` when missing; `noindex, nofollow` | Scopes never change. Junk links cannot fill the cache. Briefs may be private |
 | 2026-10-19 | Rate limit: `SCOPE_LIMIT_PER_HOUR` (default 5) per salted IP hash | Protects the Groq daily token budget |
@@ -121,6 +123,10 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   error boundary, `scope_requests` growth. Verified: cron job active and its SQL deletes only rows older than a day; advisors clean;
   no secret in `.next/static`; prod deps 0 vulns. Tests: 105 unit, 11 integration, **34 e2e** (incl. axe, keyboard, 320px, PDF
   cache). Mutation-checked: removing the cache or a form label makes the e2e fail.
+- Redesign (user: "too simple", wants a lively nature theme, logo top-left on all devices, responsive): see Design v2 above.
+  Reviewed at 375/820/1280/1680 px: no horizontal overflow; the sun was clipped on wide screens, so it was moved low
+  (rising behind the hills). e2e now runs on a production build (works next to the user's open dev server).
+  Tests: 105 unit, 11 integration, 34 e2e (axe contrast passes on the new palette).
 - **Next:** Step 8 (Vercel deploy + Lighthouse + README case study). **Needed from the user:** a Vercel account (and whether
   to use a custom domain).
 
@@ -216,8 +222,13 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - **Locally, Next sets `x-forwarded-for: ::1`**, so local requests are rate limited as `::1`, not "unknown". e2e cleans up `::1`, `127.0.0.1`, `unknown`.
 - `"use cache"` arguments must be serializable: `loadScope(id)` calls `getDb()` inside instead of taking a client.
   `cacheLife` overloads need literal profiles, so use if/else and not a ternary.
-- `npm run e2e` starts its own dev server on :3100 with `SCOPER_FAKE_LLM=1` and `SCOPER_FAKE_EMAIL=1` (no real email), and needs
-  `npx playwright install chromium` once.
+- `npm run e2e` **builds and starts the production app** on :3100 with `SCOPER_FAKE_LLM=1` and `SCOPER_FAKE_EMAIL=1`, and needs
+  `npx playwright install chromium` once. A production build is used because Next 16 refuses a second `next dev` in the same
+  folder ("Another next dev server is already running"), and the user often has one open from VS Code.
+- **The dev server's file watcher can miss a second write in quick succession on Windows** (it served a half-updated
+  globals.css). If the UI looks stale, make a real content change to the file (touch alone was not enough) or restart `npm run dev`.
+- The landscape SVG uses `preserveAspectRatio="xMidYMax slice"`: wide screens crop the **top**, phones crop the **sides**. Keep art low
+  in the viewBox (y > ~90) and near the horizontal middle.
 - **Resend test sender (`onboarding@resend.dev`) only delivers to the Resend account owner's address**; others get a 403-style
   `validation_error`. Resend also reports failures in `{ error }` instead of throwing, so `createResendSender` throws on it.
 - **react-pdf layout traps** (each found by rendering, see the comments in `ScopeDocument.tsx`):

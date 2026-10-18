@@ -24,14 +24,14 @@ async function ScopeContent({ params }: Pick<PageProps<"/s/[id]">, "params">) {
 
 export default function ScopePage(props: PageProps<"/s/[id]">) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 pb-10 pt-10 sm:px-8">
+    <main className="mx-auto w-full max-w-6xl px-5 pb-16 pt-8 sm:px-8 lg:px-12">
       <Link
         href="/"
-        className="font-semibold text-pen underline decoration-2 underline-offset-4 hover:text-pen-dark"
+        className="font-semibold text-fern underline decoration-2 underline-offset-4 hover:text-fern-dark"
       >
         Scope another brief
       </Link>
-      <Suspense fallback={<p className="mt-10 text-lg text-ink-soft">Loading your scope…</p>}>
+      <Suspense fallback={<p className="mt-10 text-lg text-moss">Loading your scope…</p>}>
         <ScopeContent params={props.params} />
       </Suspense>
     </main>

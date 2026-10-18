@@ -2,7 +2,7 @@
 
 export const SAMPLE_BRIEFS = [
   {
-    label: "a WhatsApp chat",
+    label: "WhatsApp chat",
     brief: `[10:02] Rafi: bro u do apps right??
 [10:02] Rafi: i own a gym (FitZone, 2 branches) need something for members
 [10:03] Rafi: they should book classes from phone, yoga, hiit, spin etc
@@ -13,7 +13,7 @@ export const SAMPLE_BRIEFS = [
 [10:06] Rafi: budget is tight tho, want to launch before january`,
   },
   {
-    label: "a client email",
+    label: "Client email",
     brief: `Subject: Website + online orders for Sweet Crumbs Bakery
 
 Hi there,
@@ -31,7 +31,7 @@ Thanks,
 Maria`,
   },
   {
-    label: "call notes",
+    label: "Call notes",
     brief: `Call notes - Dr. Haque, dental clinic chain (4 clinics, ~20 dentists)
 - patients book by phone, receptionists overloaded
 - want online booking: pick clinic, dentist, treatment type, slot

@@ -20,7 +20,7 @@ test.afterAll(async () => {
 
 test("turns a sample brief into a shareable scope page", async ({ page }, testInfo) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "a WhatsApp chat" }).click();
+  await page.getByRole("button", { name: "WhatsApp chat" }).click();
   await expect(page.getByLabel("Your project brief")).toHaveValue(/FitZone/);
 
   await page.getByRole("button", { name: "Scope my project" }).click();

@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
 import Link from "next/link";
+import { LeafMark } from "@/components/nature";
 import { BRAND_NAME } from "@/lib/brand";
 import "./globals.css";
 
@@ -16,17 +17,23 @@ export const metadata: Metadata = {
     "Paste a client email, call notes or a chat. Get features by priority, integrations, risks, milestones and a price range.",
 };
 
+export const viewport: Viewport = { themeColor: "#f1f6ec" };
+
+// One gutter for every full-width row, so the logo, content and footer line up on every screen size.
+const GUTTER = "px-5 sm:px-8 lg:px-12";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${schibsted.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <header className="mx-auto w-full max-w-3xl px-5 pt-6 sm:px-8">
-          <Link href="/" className="text-lg font-extrabold tracking-tight text-ink">
+      <body className="flex min-h-full flex-col">
+        <header className={`relative z-10 w-full ${GUTTER} pt-5`}>
+          <Link href="/" className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight text-forest">
+            <LeafMark className="size-8" />
             {BRAND_NAME}
           </Link>
         </header>
         <div className="flex-1">{children}</div>
-        <footer className="mx-auto w-full max-w-3xl px-5 py-10 text-sm text-ink-soft sm:px-8">
+        <footer className={`w-full ${GUTTER} border-t border-rule py-8 text-sm text-moss`}>
           Estimates use assumed rates and are a starting point for a conversation, not a quote.
         </footer>
       </body>

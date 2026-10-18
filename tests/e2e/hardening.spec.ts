@@ -123,7 +123,7 @@ test.describe("accessibility", () => {
     await page.keyboard.type(BRIEF);
 
     await page.keyboard.press("Tab"); // first sample
-    await expect(page.getByRole("button", { name: "a WhatsApp chat" })).toBeFocused();
+    await expect(page.getByRole("button", { name: "WhatsApp chat" })).toBeFocused();
     const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
     expect(outline).toBe("solid");
 

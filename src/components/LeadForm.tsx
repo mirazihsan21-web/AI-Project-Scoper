@@ -9,7 +9,7 @@ type State =
   | { kind: "error"; message: string };
 
 const FIELD =
-  "mt-1 block w-full rounded-md border-2 border-ink bg-white px-3 py-2 text-lg text-ink placeholder:text-ink-soft disabled:opacity-60";
+  "mt-1 block w-full rounded-xl border-2 border-rule bg-white px-3 py-2 text-lg font-normal text-forest placeholder:text-moss focus:border-fern disabled:opacity-60";
 
 export function LeadForm({ scopeId }: { scopeId: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -46,7 +46,7 @@ export function LeadForm({ scopeId }: { scopeId: string }) {
   }
 
   return (
-    <form onSubmit={submit} className="mt-5 grid max-w-xl gap-4">
+    <form onSubmit={submit} className="mt-6 grid gap-4 sm:grid-cols-2">
       <label className="font-semibold">
         Name
         <input name="name" required maxLength={200} autoComplete="name" disabled={pending} className={FIELD} />
@@ -56,11 +56,11 @@ export function LeadForm({ scopeId }: { scopeId: string }) {
         <input name="email" type="email" required maxLength={320} autoComplete="email" disabled={pending} className={FIELD} />
       </label>
       <label className="font-semibold">
-        Company <span className="font-normal text-ink-soft">(optional)</span>
+        Company <span className="font-normal text-moss">(optional)</span>
         <input name="company" maxLength={200} autoComplete="organization" disabled={pending} className={FIELD} />
       </label>
-      <label className="font-semibold">
-        Anything we should know before the call? <span className="font-normal text-ink-soft">(optional)</span>
+      <label className="font-semibold sm:col-span-2">
+        Anything we should know before the call? <span className="font-normal text-moss">(optional)</span>
         <textarea name="notes" rows={3} maxLength={5000} disabled={pending} className={`${FIELD} resize-y`} />
       </label>
 
@@ -73,17 +73,17 @@ export function LeadForm({ scopeId }: { scopeId: string }) {
       </div>
 
       {state.kind === "error" && (
-        <p id={errorId} role="alert" className="font-medium text-alert">
+        <p id={errorId} role="alert" className="font-medium text-alert sm:col-span-2">
           {state.message}
         </p>
       )}
 
-      <div>
+      <div className="sm:col-span-2">
         <button
           type="submit"
           disabled={pending}
           aria-describedby={state.kind === "error" ? errorId : undefined}
-          className="rounded-md bg-pen px-6 py-3 text-lg font-bold text-white hover:bg-pen-dark disabled:cursor-wait disabled:opacity-80"
+          className="w-full rounded-full bg-fern px-7 py-3 text-lg font-bold text-white hover:bg-fern-dark disabled:cursor-wait disabled:opacity-80 sm:w-auto"
         >
           {pending ? "Sending…" : "Book a call"}
         </button>

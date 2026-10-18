@@ -1,37 +1,50 @@
 @import "tailwindcss";
 
-/* Design tokens. Highlighter colours mean priority and are used for nothing else.
-   Pen blue marks things you can click. */
+/* Nature palette. Highlighters mean priority and nothing else: sun = must, leaf = should, sky = could.
+   Fern marks things you can click. Contrast: forest/moss on mist ≥ 6:1, white on fern ≈ 5.5:1. */
 @theme {
-  --color-paper: #f6f7f4;
-  --color-ink: #1e2638;
-  --color-ink-soft: #545c6e;
-  --color-pen: #2b44d6;
-  --color-pen-dark: #1f33a8;
-  --color-rule: #d8dbd2;
-  --color-must: #ffe14d;
-  --color-should: #a6ebc9;
-  --color-could: #d7c9ff;
+  --color-mist: #f1f6ec;
+  --color-sky-wash: #e3f0ec;
+  --color-forest: #1d3a2a;
+  --color-moss: #4b6352;
+  --color-fern: #2e7a44;
+  --color-fern-dark: #22603a;
+  --color-rule: #cfddc6;
+  --color-must: #f7d24a;
+  --color-should: #b9e29a;
+  --color-could: #bfe0ee;
   --color-alert: #b42318;
 
   --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* A soft morning sky at the top of every page, settling into mist. */
 body {
-  background: var(--color-paper);
-  color: var(--color-ink);
+  background-color: var(--color-mist);
+  background-image: linear-gradient(to bottom, var(--color-sky-wash), var(--color-mist) 32rem);
+  background-repeat: no-repeat;
+  color: var(--color-forest);
   font-family: var(--font-sans);
 }
 
 ::selection {
-  background: var(--color-must);
-  color: var(--color-ink);
+  background: var(--color-should);
+  color: var(--color-forest);
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-pen);
+  outline: 3px solid var(--color-fern);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 4px;
+}
+
+/* Leaf-shaped panel: two rounded corners on one diagonal, used only for the few panels that matter. */
+.leaf {
+  border-radius: 2rem 0.75rem 2rem 0.75rem;
+  background: #fbfdf8;
+  box-shadow:
+    0 1px 0 rgb(29 58 42 / 0.06),
+    0 18px 40px -20px rgb(46 122 68 / 0.35);
 }
 
 /* A highlighter stroke behind text: sits low like a real marker and wraps across lines. */
@@ -59,18 +72,85 @@ body {
   --hl: var(--color-could);
 }
 
-/* The page's one orchestrated moment: must-haves get marked when a scope first appears. */
+/* Motion: slow and ambient, and all of it stops for people who ask for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .highlight-sweep {
     animation: sweep 700ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
     animation-delay: calc(250ms + var(--i, 0) * 140ms);
   }
+  .cloud-slow {
+    animation: drift 120s linear infinite;
+  }
+  .cloud-fast {
+    animation: drift 80s linear infinite;
+    animation-delay: -30s;
+  }
+  .sun-glow {
+    animation: glow 7s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  .sprout-stem {
+    animation: grow-stem 1.6s ease-out infinite;
+    transform-origin: bottom;
+    transform-box: fill-box;
+  }
+  .sprout-leaf {
+    animation: grow-leaf 1.6s ease-out infinite;
+    transform-box: fill-box;
+  }
+  .sprout-leaf-left {
+    transform-origin: right bottom;
+  }
+  .sprout-leaf-right {
+    transform-origin: left bottom;
+    animation-delay: 0.15s;
+  }
 }
+
 @keyframes sweep {
   from {
     background-size: 0% 100%;
   }
   to {
     background-size: 100% 100%;
+  }
+}
+@keyframes drift {
+  from {
+    transform: translateX(-25%);
+  }
+  to {
+    transform: translateX(125%);
+  }
+}
+@keyframes glow {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.7;
+  }
+}
+@keyframes grow-stem {
+  0% {
+    transform: scaleY(0);
+  }
+  45%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes grow-leaf {
+  0%,
+  35% {
+    transform: scale(0);
+  }
+  70%,
+  100% {
+    transform: scale(1);
   }
 }

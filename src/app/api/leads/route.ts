@@ -3,9 +3,14 @@ import { countLeadsForScope, insertLead, markLeadNotified } from "@/lib/db/leads
 import { getScope } from "@/lib/db/scopes";
 import { buildLeadEmail } from "@/lib/email/lead-email";
 import { createResendSender, fakeSender, type SendEmail } from "@/lib/email/sender";
+import { readJsonBody } from "@/lib/http/json-body";
 import { handleLeadRequest } from "@/lib/leads/request";
-import { pdfFilename, renderScopePdf } from "@/lib/pdf/render";
+import { scopePdf } from "@/lib/pdf/cached";
+import { pdfFilename } from "@/lib/pdf/render";
 import { scopeUrl } from "@/lib/urls";
+
+// Far above any real request (5,000 characters of notes plus contact details is about 6 KB).
+const MAX_BODY_BYTES = 16 * 1024;
 
 export const maxDuration = 30;
 
@@ -17,7 +22,9 @@ function emailSender(): SendEmail {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => undefined);
+  const read = await readJsonBody(request, MAX_BODY_BYTES);
+  if (!read.ok) return Response.json({ error: read.error }, { status: read.status });
+  const { body } = read;
   const db = getDb();
   const appUrl = process.env.APP_URL || new URL(request.url).origin;
 
@@ -28,7 +35,8 @@ export async function POST(request: Request) {
     notify: async (lead, stored) => {
       const to = process.env.LEAD_NOTIFY_EMAIL;
       if (!to) throw new Error("LEAD_NOTIFY_EMAIL is not set");
-      const pdf = await renderScopePdf(stored, appUrl);
+      const pdf = await scopePdf(stored.id, appUrl);
+      if (!pdf) throw new Error(`Scope ${stored.id} disappeared before its PDF was rendered`);
       await emailSender()({
         from: process.env.RESEND_FROM || "Scoper <onboarding@resend.dev>",
         to,

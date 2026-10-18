@@ -16,7 +16,13 @@ const optionalText = (max: number) =>
 const LeadInput = z.object(
   {
     scopeId: z.uuid({ error: "This scope link looks broken. Reload the page and try again." }),
-    name: z.string({ error: "Add your name." }).trim().min(1, "Add your name.").max(200, "Keep your name under 200 characters."),
+    name: z
+      .string({ error: "Add your name." })
+      .trim()
+      .min(1, "Add your name.")
+      .max(200, "Keep your name under 200 characters.")
+      // The name goes into the email subject, where a line break could be used to forge headers.
+      .refine((v) => !/\p{Cc}/u.test(v), "Your name can't include line breaks or control characters."),
     email: z
       .string({ error: "Add your email address." })
       .trim()

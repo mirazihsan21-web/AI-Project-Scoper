@@ -60,6 +60,8 @@ describe("handleLeadRequest", () => {
     ["an invalid email", { ...VALID, email: "ada-at-example" }],
     ["a scope id that is not a uuid", { ...VALID, scopeId: "abc" }],
     ["notes over 5,000 characters", { ...VALID, notes: "x".repeat(5001) }],
+    // The name goes into the email subject; a line break there could be used to forge headers.
+    ["a name containing a line break", { ...VALID, name: "Ada\r\nBcc: victim@example.com" }],
   ])("rejects %s with 400 and saves nothing", async (_label, body) => {
     const { d, calls } = deps();
 

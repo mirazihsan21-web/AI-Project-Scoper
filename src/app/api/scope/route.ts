@@ -2,8 +2,12 @@ import { getDb } from "@/lib/db/client";
 import { checkRateLimit, hashIp } from "@/lib/db/rate-limit";
 import { insertScope } from "@/lib/db/scopes";
 import { clientIp } from "@/lib/http/client-ip";
+import { readJsonBody } from "@/lib/http/json-body";
 import { handleScopeRequest } from "@/lib/scope/request";
 import { getScopeGenerator } from "@/lib/scope/service";
+
+// Far above any real request (a 10,000-character brief is about 10 KB).
+const MAX_BODY_BYTES = 64 * 1024;
 
 // Up to three models can be tried in turn, each with a 25 s timeout.
 export const maxDuration = 60;
@@ -14,7 +18,9 @@ export async function POST(request: Request) {
   const salt = process.env.IP_HASH_SALT;
   if (!salt) throw new Error("IP_HASH_SALT is not set");
 
-  const body = await request.json().catch(() => undefined);
+  const read = await readJsonBody(request, MAX_BODY_BYTES);
+  if (!read.ok) return Response.json({ error: read.error }, { status: read.status });
+  const { body } = read;
   const db = getDb();
   const ipHash = hashIp(clientIp(request.headers), salt);
   const limit = Number(process.env.SCOPE_LIMIT_PER_HOUR ?? 5);

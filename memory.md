@@ -13,7 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
-- **Current phase:** Steps 0–6 are done (scope, PDF and "Book a call" with a real email all work locally). Step 7 (hardening) is next.
+- **Current phase:** Steps 0–7 are done (hardened and fully tested locally). Step 8 (deploy to Vercel + case study) is next.
 
 ## 2. Decisions log
 
@@ -49,6 +49,11 @@
 | 2026-10-19 | **Leads:** `POST /api/leads` → `handleLeadRequest` (`src/lib/leads/request.ts`, unit-tested). Order: honeypot (silent 201) → validate (400) → scope exists (404) → **max 3 leads per scope** (429) → save → email the owner with the PDF attached and **reply-to = visitor** → mark `notified_at`. If the email fails, the lead is still saved, the visitor still gets 201, and `notified_at` stays null | Spam control without CAPTCHA. Never lose a lead because of an email outage |
 | 2026-10-19 | Lead emails go to **`LEAD_NOTIFY_EMAIL` = the Resend account owner's address** (value in `.env.local`, not committed), from `onboarding@resend.dev` | User's choice: Resend's test sender only delivers to the account owner. To use another address, verify a domain in Resend and change `RESEND_FROM` |
 | 2026-10-19 | Resend key is **sending-only** | Least privilege |
+| 2026-10-19 | **Hardening:** POST bodies go through `readJsonBody` (`src/lib/http/json-body.ts`): `application/json` only (415, which blocks cross-site `text/plain` form posts with no CORS preflight) and a streamed size cap (413; 64 KB scope, 16 KB leads). Lead names reject control characters (no header injection via the email subject) | Found in the Step 7 review; each has a test that failed first |
+| 2026-10-19 | Security headers in `next.config.ts`: nosniff, `X-Frame-Options: DENY`, strict-origin referrer, Permissions-Policy, and a CSP **without script-src** (`frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`); `poweredByHeader: false` | A strict script CSP needs per-request nonces, which force every page to render dynamically. Revisit if third-party scripts are ever added |
+| 2026-10-19 | The PDF is cached per scope (`scopePdf` in `src/lib/pdf/cached.ts`, `"use cache"` + `cacheLife("max")`), reused by the download route and the lead email | A render is about 0.3 s CPU; hammering one link no longer costs anything |
+| 2026-10-19 | pg_cron job `purge-scope-requests` (03:17 UTC daily) deletes `scope_requests` older than 1 day (migration `…_purge_scope_requests.sql`) | Closes the "grows forever" item; hashed IPs are not kept longer than needed |
+| 2026-10-19 | Accept 5 "high" npm audit findings in the **lint toolchain only** (eslint-config-next → fast-glob → micromatch → braces, nested-glob DoS). Production deps: 0 vulnerabilities | Nothing is shipped; npm's "fix" is a downgrade to the Next 14 lint config. Re-check when eslint-config-next updates |
 | 2026-10-19 | **PDF:** `@react-pdf/renderer` on the server, `GET /api/scope/[id]/pdf` (attachment, `private, max-age=3600`). `renderScopePdf(stored, appUrl)` is reusable for the Step 6 email attachment. Same design language: Schibsted Grotesk (static TTFs + OFL in `src/lib/pdf/fonts/`), highlighter backgrounds, outlined price box, footer link back to the scope with page numbers. The original brief is **not** in the PDF | Briefs may hold non-Latin text the font can't render, and the scope is the deliverable |
 
 ## 3. How we work
@@ -71,7 +76,7 @@
 - [x] **4. API and UI:** `/api/scope`, landing page with samples, `/s/[id]` result page, loading and error states, not-found page, 6 e2e tests (desktop and mobile)
 - [x] **5. PDF:** `ScopeDocument`, `renderScopePdf`, `/api/scope/[id]/pdf`, Download button, text-extraction tests (unpdf), e2e download
 - [x] **6. Leads:** "Book a call" form, `/api/leads`, Resend email with PDF + reply-to, honeypot, 3-per-scope cap, e2e with fake sender, one real email sent
-- [ ] **7. Hardening:** rate limiting, input caps, honeypot, error states, mobile checks
+- [x] **7. Hardening:** security review, JSON-only + size-capped bodies, header-injection guard, security headers, PDF cache, pg_cron purge, error boundary, e2e for every error message, axe scans, keyboard flow, 320px overflow, secret scan of the client bundle, npm audit
 - [ ] **8. Ship:** Vercel deploy, Lighthouse, README case study (architecture, p95 latency, cost per run)
 
 ## 5. Session log
@@ -109,7 +114,14 @@
   Tests: 97 unit (incl. HTML-escaping, honeypot and cap mutation checks), 11 integration, 8 e2e (incl. booking).
 - **Test data left in the DB on purpose:** scope `27020389-d323-40c5-8af0-7e7d8c0cec48` with leads 15 (not notified) and
   16 (notified), so the user can check the email. Delete once they confirm it arrived.
-- **Next:** Step 7 (hardening). Later needed from the user: Vercel account (Step 8).
+- Step 7: manual security review (the `security-review` skill needs a git remote). Fixed: cross-site text/plain posts, unbounded
+  bodies, CRLF in lead names (test showed a `
+Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
+  error boundary, `scope_requests` growth. Verified: cron job active and its SQL deletes only rows older than a day; advisors clean;
+  no secret in `.next/static`; prod deps 0 vulns. Tests: 105 unit, 11 integration, **34 e2e** (incl. axe, keyboard, 320px, PDF
+  cache). Mutation-checked: removing the cache or a form label makes the e2e fail.
+- **Next:** Step 8 (Vercel deploy + Lighthouse + README case study). **Needed from the user:** a Vercel account (and whether
+  to use a custom domain).
 
 ## 6. Eval results (for the case study)
 
@@ -148,7 +160,6 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
   (e.g. booking 32–64h) are higher than the old size midpoints. The hours per type in `PRICING_CONFIG` are assumptions; tune them.
 - Final brand name: TBD by the user ("Scoper" is a working name).
 - Email sender: `onboarding@resend.dev` until a domain is verified in Resend.
-- `scope_requests` grows forever. Add a cleanup later (e.g. pg_cron deleting rows older than 1 day).
 - Models sometimes mark more than 4 features as must (the yoga smoke test had 6), so the MVP is close to Full.
   Consider tightening the prompt, or a soft cap in code, then re-run `npm run compare`.
 - Dark mode is not designed. The paper look is light-only for now.
@@ -179,6 +190,9 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - Model cooldowns live in memory per server instance. On Vercel, separate instances do not share them, which is OK:
   an unknown cooldown just costs one fast (~100 ms) 429.
 - Eval files named `*-injection-guard*` are expected to be rejected by the guard; `*injection*` files get extra manipulation checks.
+- **axe in e2e:** `new AxeBuilder({ page }).exclude("[hidden]")`, because Next keeps the previous page hidden in the DOM.
+- **PDF bytes differ on every render** (react-pdf stamps a creation time to the second). Identical bytes 1+ s apart prove the cache works.
+- Playwright `page.route()` is the way to test UI error states without breaking the server (`tests/e2e/hardening.spec.ts`).
 - `npm run compare` caps any single rate-limit wait at 2 min and skips the sample. Before the cap, an 845 s `retry-after`
   hung a run for 15+ min. It takes about 16 min for `--runs 2` because Qwen allows about 1 scope/min. Do not run it alongside `npm run eval`:
   they share rate limits.

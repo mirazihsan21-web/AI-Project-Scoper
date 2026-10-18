@@ -1,25 +1,36 @@
 import { describe, expect, it } from "vitest";
 import { estimate } from "@/lib/pricing/estimate";
 import type { PricingConfig } from "@/lib/pricing/config";
+import { FEATURE_TYPES, INTEGRATION_TYPES } from "@/lib/scope/catalog";
 import type { Scope } from "@/lib/scope/schema";
 import { sampleScope } from "../fixtures/scope";
 
+const uniform = <K extends string>(keys: readonly K[], range: readonly [number, number]) =>
+  Object.fromEntries(keys.map((k) => [k, range])) as Record<K, readonly [number, number]>;
+
 // Round numbers so every expected value below can be worked out by hand.
+// Every type defaults to 10-20h; a few get distinct ranges so tests can tell them apart.
 const config: PricingConfig = {
   currency: "USD",
   hourlyRate: 100,
-  featureHours: { xs: [1, 2], s: [2, 4], m: [10, 20], l: [20, 40], xl: [40, 80] },
-  integrationHours: { s: [5, 10], m: [10, 20], l: [20, 40] },
+  featureHours: {
+    ...uniform(FEATURE_TYPES, [10, 20]),
+    content_pages: [1, 2],
+    records_management: [2, 4],
+    reviews_ratings: [20, 40],
+  },
+  integrationHours: uniform(INTEGRATION_TYPES, [10, 20]),
   overheadPct: 0.2,
   contingencyPct: { low: 0, medium: 0.2, high: 0.6 },
   teamHoursPerWeek: 40,
   priceRounding: 500,
 };
 
-const mustM = { name: "Core", description: "d", priority: "must", complexity: "m" } as const;
+const mustCheckout = { name: "Core", description: "d", priority: "must", type: "cart_checkout" } as const;
+const stripe = { name: "Stripe", purpose: "p", type: "payment_provider" } as const;
 
 function scope(overrides: Partial<Scope>): Scope {
-  return { ...sampleScope, integrations: [], risks: [], milestones: [], features: [mustM], ...overrides };
+  return { ...sampleScope, integrations: [], risks: [], milestones: [], features: [mustCheckout], ...overrides };
 }
 
 describe("estimate", () => {
@@ -32,7 +43,7 @@ describe("estimate", () => {
     },
     {
       case: "integrations count toward the MVP",
-      s: scope({ integrations: [{ name: "Stripe", purpose: "p", complexity: "m" }] }),
+      s: scope({ integrations: [stripe] }),
       // (10+10)–(20+20)h × 1.2 = 24–48h
       mvp: { hoursLow: 24, hoursHigh: 48, priceLow: 2000, priceHigh: 5000, weeksLow: 1, weeksHigh: 2 },
     },
@@ -55,7 +66,7 @@ describe("estimate", () => {
     },
     {
       case: "tiny scope still prices at one rounding unit",
-      s: scope({ features: [{ ...mustM, complexity: "xs" }] }),
+      s: scope({ features: [{ ...mustCheckout, type: "content_pages" }] }),
       // 1–2h × 1.2 = 1.2–2.4h → 1–2h; $100 and $200 both clamp to $500
       mvp: { hoursLow: 1, hoursHigh: 2, priceLow: 500, priceHigh: 500, weeksLow: 1, weeksHigh: 1 },
     },
@@ -63,13 +74,19 @@ describe("estimate", () => {
     expect(estimate(s, config).mvp).toEqual(mvp);
   });
 
+  it("prices each feature by its catalog type", () => {
+    const result = estimate(scope({ features: [{ ...mustCheckout, type: "reviews_ratings" }] }), config);
+    // reviews_ratings is 20–40h × 1.2
+    expect([result.mvp.hoursLow, result.mvp.hoursHigh]).toEqual([24, 48]);
+  });
+
   it("MVP counts only must-haves while Full adds should and could", () => {
     const result = estimate(
       scope({
         features: [
-          mustM,
-          { name: "S", description: "d", priority: "should", complexity: "s" },
-          { name: "C", description: "d", priority: "could", complexity: "l" },
+          mustCheckout,
+          { name: "S", description: "d", priority: "should", type: "records_management" },
+          { name: "C", description: "d", priority: "could", type: "reviews_ratings" },
         ],
       }),
       config,
@@ -93,9 +110,9 @@ describe("estimate", () => {
       config,
     );
     expect(result.milestones).toEqual([
-      // "Online Ordering" m: 10–20h × 1.2
+      // "Online Ordering" cart_checkout: 10–20h × 1.2
       { name: "MVP launch", hoursLow: 12, hoursHigh: 24, weeksLow: 1, weeksHigh: 1 },
-      // "admin dashboard" → "Admin Dashboard" s: 2–4h × 1.2 = 2.4–4.8h; unknown name ignored
+      // "admin dashboard" → "Admin Dashboard" records_management: 2–4h × 1.2 = 2.4–4.8h; unknown name ignored
       { name: "Operations", hoursLow: 2, hoursHigh: 5, weeksLow: 1, weeksHigh: 1 },
     ]);
   });

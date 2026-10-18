@@ -80,7 +80,29 @@ describe("ScopeSchema", () => {
     expect(ScopeSchema.safeParse(bad).success).toBe(false);
   });
 
-  it("rejects a scope with no features", () => {
-    expect(ScopeSchema.safeParse({ ...sampleScope, features: [] }).success).toBe(false);
+  it("rejects a feature type that is not in the catalog", () => {
+    const bad = {
+      ...sampleScope,
+      features: [{ ...sampleScope.features[0], type: "blockchain_magic" }],
+    };
+    expect(ScopeSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it.each([
+    [2, false],
+    [3, true],
+    [10, true],
+    [11, false],
+  ])("with %i features, accepts = %s (prompt asks for 4-8; outside 3-10 the model ignored it)", (count, ok) => {
+    const features = Array.from({ length: count }, (_, i) => ({
+      ...sampleScope.features[0],
+      name: `Feature ${i}`,
+    }));
+    expect(ScopeSchema.safeParse({ ...sampleScope, features }).success).toBe(ok);
+  });
+
+  it("rejects a scope with no must-have feature, since the MVP would be empty", () => {
+    const features = sampleScope.features.map((f) => ({ ...f, priority: "could" as const }));
+    expect(ScopeSchema.safeParse({ ...sampleScope, features }).success).toBe(false);
   });
 });

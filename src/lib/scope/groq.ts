@@ -3,6 +3,9 @@ import { ModelCallError, type CallModel } from "./generate";
 import { scopeJsonSchema } from "./schema";
 
 const REQUEST_TIMEOUT_MS = 25_000;
+// Low temperature keeps one model consistent with itself: in `npm run compare` it cut the
+// run-to-run spread of the same brief on the same model from up to 1.6x to about 1.1x.
+const TEMPERATURE = 0.2;
 
 export function toModelCallError(error: unknown): ModelCallError {
   const message = error instanceof Error ? error.message : String(error);
@@ -26,6 +29,7 @@ export function createGroqCaller(apiKey: string): CallModel {
         model: model.id,
         messages,
         max_completion_tokens: model.maxTokens,
+        temperature: TEMPERATURE,
         reasoning_effort: model.reasoningEffort,
         response_format: {
           type: "json_schema",

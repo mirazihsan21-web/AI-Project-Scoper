@@ -11,8 +11,10 @@
 
 ## Rules
 
-- The LLM never outputs prices or hours. It returns complexity sizes, and `src/lib/pricing/estimate.ts` turns those into money.
-- Pricing constants live only in `src/lib/pricing/config.ts` and are marked as assumptions.
+- The LLM never outputs prices or hours. It classifies features and integrations into catalog types, and `src/lib/pricing/estimate.ts` turns those into money.
+- Pricing constants (hours per catalog type, rate, overhead) live only in `src/lib/pricing/config.ts` and are marked as assumptions.
+- Feature and integration types live only in `src/lib/scope/catalog.ts`. The schema enum and the prompt are generated from it.
+  After changing it, run `npm run compare` and record the spread in `memory.md`.
 - The Groq schema must stay strict-mode compatible. `tests/unit/scope-schema.test.ts` enforces this.
 - The Groq model chain (order, token budgets, prices) lives only in `src/lib/scope/models.ts`. After changing the prompt
   or the models, run `npm run eval` and record the result in `memory.md` section 6.

@@ -13,7 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
-- **Current phase:** Steps 0–2 are done. Step 3 (Supabase database) is next.
+- **Current phase:** Steps 0–2 are done, plus the sizing-variance fix. Step 3 (Supabase database) is next.
 
 ## 2. Decisions log
 
@@ -28,6 +28,7 @@
 | 2026-10-19 | **Standalone, neutral brand.** Working name "Scoper" (one constant, `src/lib/brand.ts`) | User: not connected to the agency's portfolio |
 | 2026-10-19 | **Pricing is assumed for now.** All rates live in `src/lib/pricing/config.ts` | User: no historical project data yet |
 | 2026-10-19 | The LLM returns **complexity sizes only**. Code turns them into hours and money | Numbers are deterministic and defensible, never made up by the LLM |
+| 2026-10-19 | **Superseded (same day):** sizes xs–xl were replaced by a **feature-type catalog** (`src/lib/scope/catalog.ts`, 18 feature + 11 integration types). The LLM only classifies; `PRICING_CONFIG.featureHours` holds assumed hours per type, which is effectively the price list | User chose this after `npm run compare` showed each model reads "s/m/l" differently (20b small, Qwen large), and a sizing guide did not fix it. Classification is far more consistent across models |
 | 2026-10-19 | Two price tiers: **MVP** (must-haves) and **Full** (must + should + could) | Better sales conversation, and cheap to compute |
 | 2026-10-19 | "Book a call" saves to **Supabase** and **emails the owner via Resend** with the PDF attached | User's choice |
 | 2026-10-19 | Hosting: **Vercel** | User's choice. Native Next.js support |
@@ -35,7 +36,8 @@
 | 2026-10-19 | `@types/node` bumped to ^24 (scaffold had ^20) | Vitest 5 peer requirement. Matches Node 24 runtime |
 | 2026-10-19 | Integrations count toward **both** MVP and Full tiers. Milestone hours sum only their named features | Integrations are usually launch-critical. No feature↔integration mapping exists |
 | 2026-10-19 | Price low rounds **down**, high rounds **up** to $500, minimum $500 | The range never claims more precision than it has |
-| 2026-10-19 | Minimum-one-feature rule is a Zod `.refine`, not `minItems` | Keeps the JSON Schema to keywords Groq documents for strict mode |
+| 2026-10-19 | Count and MVP rules are Zod `.refine`s, not `minItems`: **3–10 features** (prompt asks 4–8) and **at least one `must`**. A failure sends the request to the next model | Keeps the JSON Schema to keywords Groq documents for strict mode. 20b once returned 2 features and once 0 musts, which gave a $500 MVP |
+| 2026-10-19 | `temperature: 0.2` for all models (`src/lib/scope/groq.ts`) | Cut the same model's run-to-run spread from up to 1.6× to about 1.1× |
 
 ## 3. How we work
 
@@ -70,6 +72,14 @@
 - User provided the Groq key (stored in `.env.local` only) and asked to use all three Groq models, switching when one runs out.
 - Step 2: `src/lib/scope/{models,prompt,generate,groq,guard,fake,service}.ts`, `scripts/eval.ts`, `evals/briefs/` (9 briefs).
   46 unit tests, mutation-checked. Live eval below.
+- Ran Qwen alone: 9/9. Found the same brief priced $4k–10k on 120b but $13.5k–28k on Qwen. The user said: fix the sizing variance first.
+- **Sizing-variance investigation** (`npm run compare`; table in section 6):
+  - Baseline: each model read "s/m/l" differently (20b small, Qwen large), and the same model also varied between runs.
+  - H1 sizing guide: no improvement. H2 temperature 0.2: fixed run-to-run noise within a model.
+  - H3 feature-type catalog (user's choice): median spread 1.31×.
+  - H4: 3–10 feature gate, sharper ai_assistant/matching definitions, "type by what the feature does" rule. This fixed the
+    worst brief (2.55× → 1.46×).
+  - The prompt example deliberately uses a food-delivery app, not an eval brief, to avoid overfitting.
 - **Next:** Step 3 (Supabase). **Needed from the user:** Supabase project URL and service-role key. Later: Resend key,
   notify email, Vercel account.
 
@@ -81,15 +91,28 @@
 |------|-------|--------|-----|-----|----------------|-----------|
 | 2026-10-19 | 120b → 20b → qwen + guard | 8/9 (1 warning: 20b gave the SaaS brief 10 features) | 1.5 s | 3.1 s | $0.00076 | 120b ×3, 20b ×4, qwen ×1; guard rejected 1 injection |
 | 2026-10-19 | qwen only + guard | 9/9, all within the 1000-token cap | 1.7 s | 2.3 s | $0.0033 | qwen ×8 (about 1 scope/min on the free tier); guard rejected 1 |
+| 2026-10-19 | catalog + temp 0.2 + gates | **9/9** | 2.6 s | 3.4 s | $0.0012 | 120b ×6, 20b ×1, qwen ×1 (one 20b output rejected, then Qwen took over); guard rejected 1 |
+
+**Sizing consistency** (`npm run compare -- --runs 2`): spread = max/min Full-tier midpoint hours per brief, across 3 models × 2 runs.
+Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs).
+
+| Label | Change | Median spread | Worst spread |
+|-------|--------|---------------|--------------|
+| baseline | xs–xl sizes | 1.85× | 2.84× |
+| h1-rubric | + sizing guide with anchors | 2.15× | 2.44× |
+| h2-temp02 | + temperature 0.2 | 1.70× | 1.88× |
+| h3-catalog | catalog replaces sizes (temp 0.2) | 1.31× | 2.55× (20b: all ai_assistant, or 2 features) |
+| h4-catalog-tightened | + 3–10 feature gate, sharper type definitions | 1.46× | 1.69× |
 
 ## 7. Assumptions and open questions
 
 - **Pricing values are ASSUMED** (see `src/lib/pricing/config.ts`): USD $45/h blended rate, hour ranges per
   complexity size, 20% PM/QA overhead, 10/15/25% contingency, 60 team-hours/week, round to $500.
   Tune these once real project data exists.
-- **Sizing varies between models.** For the same gym brief, the MVP came out at $4k–10k on 120b but $13.5k–28k on Qwen.
-  Pricing is deterministic *given* the sizes, but each model sizes differently. Possible fix later: add 2–3 calibrated
-  sizing examples to the prompt, then re-run the eval and compare MVP ranges per brief across models.
+- **Remaining sizing variance** now comes mostly from *how many* features a model lists (e.g. 6 vs 8 for the same brief),
+  not from how it sizes them. Acceptable for now; revisit if real leads show it.
+- **The price level rose** with the catalog: the gym MVP went from $4k–10k to about $7.5k–16.5k, because the catalog hours
+  (e.g. booking 32–64h) are higher than the old size midpoints. The hours per type in `PRICING_CONFIG` are assumptions; tune them.
 - Final brand name: TBD by the user ("Scoper" is a working name).
 - Email sender: `onboarding@resend.dev` until a domain is verified in Resend.
 
@@ -113,4 +136,7 @@
 - Model cooldowns live in memory per server instance. On Vercel, separate instances do not share them, which is OK:
   an unknown cooldown just costs one fast (~100 ms) 429.
 - Eval files named `*-injection-guard*` are expected to be rejected by the guard; `*injection*` files get extra manipulation checks.
+- `npm run compare` takes about 16 min for `--runs 2` because Qwen allows about 1 scope/min. Do not run it alongside `npm run eval`:
+  they share rate limits.
+- Do not put eval-brief scenarios into prompt examples (overfitting). Use other domains.
 - Quote values with `<` or spaces in `.env` files (e.g. `RESEND_FROM`), or `source .env.local` breaks in bash.

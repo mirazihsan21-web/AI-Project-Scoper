@@ -56,8 +56,8 @@ export function estimate(scope: Scope, config: PricingConfig): Estimate {
   const toHours = ([low, high]: Range): Range => [Math.round(low * multiplier), Math.round(high * multiplier)];
   const toWeeks = (hours: number) => Math.ceil(hours / config.teamHoursPerWeek);
 
-  const featureRange = (f: Scope["features"][number]): Range => [...config.featureHours[f.complexity]];
-  const integrationHours = sum(scope.integrations.map((i): Range => [...config.integrationHours[i.complexity]]));
+  const featureRange = (f: Scope["features"][number]): Range => [...config.featureHours[f.type]];
+  const integrationHours = sum(scope.integrations.map((i): Range => [...config.integrationHours[i.type]]));
 
   function tier(features: Scope["features"]): TierEstimate {
     const [hoursLow, hoursHigh] = toHours(sum([...features.map(featureRange), integrationHours]));

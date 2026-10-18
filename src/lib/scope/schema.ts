@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FEATURE_TYPES, INTEGRATION_TYPES } from "./catalog";
 
 export const PROJECT_TYPES = [
   "website",
@@ -12,12 +13,8 @@ export const PROJECT_TYPES = [
   "other",
 ] as const;
 export const PRIORITIES = ["must", "should", "could"] as const;
-export const FEATURE_SIZES = ["xs", "s", "m", "l", "xl"] as const;
-export const INTEGRATION_SIZES = ["s", "m", "l"] as const;
 export const SEVERITIES = ["low", "medium", "high"] as const;
 
-export type FeatureSize = (typeof FEATURE_SIZES)[number];
-export type IntegrationSize = (typeof INTEGRATION_SIZES)[number];
 export type Severity = (typeof SEVERITIES)[number];
 
 // Descriptions are part of the JSON Schema sent to Groq, so they double as instructions to the model.
@@ -26,20 +23,14 @@ const Feature = z.object({
   description: z.string().describe("One sentence on what the user can do"),
   priority: z
     .enum(PRIORITIES)
-    .describe("MoSCoW: must = needed for launch, should = important but can follow, could = nice to have"),
-  complexity: z
-    .enum(FEATURE_SIZES)
-    .describe(
-      "xs = static content or config tweak; s = simple CRUD screen or form; m = feature with business logic or several screens; l = complex feature such as payments, realtime or search; xl = whole subsystem such as a matching engine or custom ML",
-    ),
+    .describe("MoSCoW priority, as defined in the instructions"),
+  type: z.enum(FEATURE_TYPES).describe("The feature type from the catalogue in the instructions that fits best"),
 });
 
 const Integration = z.object({
   name: z.string().describe("Third-party service or system, e.g. Stripe, Google Calendar, an existing ERP"),
   purpose: z.string().describe("Why the project needs it"),
-  complexity: z
-    .enum(INTEGRATION_SIZES)
-    .describe("s = well-documented SDK; m = webhooks or OAuth; l = legacy, undocumented or bespoke API"),
+  type: z.enum(INTEGRATION_TYPES).describe("The integration type from the catalogue in the instructions that fits best"),
 });
 
 const Risk = z.object({
@@ -68,7 +59,16 @@ export const ScopeSchema = z
     milestones: z.array(Milestone).describe("Ordered delivery phases; every must-have feature appears in one"),
   })
   // Checked after parsing; kept out of the JSON Schema because Groq strict mode may not support minItems.
-  .refine((s) => s.features.length > 0, { message: "Scope must list at least one feature", path: ["features"] });
+  // A failure here sends the request to the next model.
+  // The prompt asks for 4-8 features; a count outside 3-10 means the model ignored it.
+  .refine((s) => s.features.length >= 3 && s.features.length <= 10, {
+    message: "Scope must list between 3 and 10 features",
+    path: ["features"],
+  })
+  .refine((s) => s.features.some((f) => f.priority === "must"), {
+    message: "Scope must have at least one must-have feature, or the MVP is empty",
+    path: ["features"],
+  });
 
 export type Scope = z.infer<typeof ScopeSchema>;
 

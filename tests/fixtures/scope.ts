@@ -13,23 +13,23 @@ export const sampleScope: Scope = {
       name: "Online Ordering",
       description: "Customers browse the menu and place pickup orders.",
       priority: "must",
-      complexity: "m",
+      type: "cart_checkout",
     },
     {
       name: "Admin Dashboard",
       description: "Owner sees and updates order status.",
       priority: "should",
-      complexity: "s",
+      type: "records_management",
     },
     {
-      name: "Loyalty Points",
-      description: "Customers earn points per order.",
+      name: "Customer Reviews",
+      description: "Customers rate and review their order.",
       priority: "could",
-      complexity: "l",
+      type: "reviews_ratings",
     },
   ],
   integrations: [
-    { name: "Stripe", purpose: "Card payments at checkout", complexity: "m" },
+    { name: "Stripe", purpose: "Card payments at checkout", type: "payment_provider" },
   ],
   risks: [
     {

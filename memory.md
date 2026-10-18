@@ -80,12 +80,16 @@
 | Date | Chain | Passed | p50 | p95 | Avg cost/scope | Served by |
 |------|-------|--------|-----|-----|----------------|-----------|
 | 2026-10-19 | 120b → 20b → qwen + guard | 8/9 (1 warning: 20b gave the SaaS brief 10 features) | 1.5 s | 3.1 s | $0.00076 | 120b ×3, 20b ×4, qwen ×1; guard rejected 1 injection |
+| 2026-10-19 | qwen only + guard | 9/9, all within the 1000-token cap | 1.7 s | 2.3 s | $0.0033 | qwen ×8 (about 1 scope/min on the free tier); guard rejected 1 |
 
 ## 7. Assumptions and open questions
 
 - **Pricing values are ASSUMED** (see `src/lib/pricing/config.ts`): USD $45/h blended rate, hour ranges per
   complexity size, 20% PM/QA overhead, 10/15/25% contingency, 60 team-hours/week, round to $500.
   Tune these once real project data exists.
+- **Sizing varies between models.** For the same gym brief, the MVP came out at $4k–10k on 120b but $13.5k–28k on Qwen.
+  Pricing is deterministic *given* the sizes, but each model sizes differently. Possible fix later: add 2–3 calibrated
+  sizing examples to the prompt, then re-run the eval and compare MVP ranges per brief across models.
 - Final brand name: TBD by the user ("Scoper" is a working name).
 - Email sender: `onboarding@resend.dev` until a domain is verified in Resend.
 

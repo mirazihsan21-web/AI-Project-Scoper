@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
 import { hashIp } from "../../src/lib/db/rate-limit";
@@ -42,6 +43,19 @@ test("turns a sample brief into a shareable scope page", async ({ page }, testIn
   expect(new Set(sizes)).toEqual(new Set(["100% 100%"]));
 
   await page.screenshot({ path: `test-results/screens/${testInfo.project.name}-scope.png`, fullPage: true });
+
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download PDF" }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe("gym-class-booking-app-scope.pdf");
+  const bytes = await readFile(await file.path());
+  expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+  expect(bytes.length).toBeGreaterThan(10_000);
+});
+
+test("returns 404 for the PDF of a scope that doesn't exist", async ({ request }) => {
+  const response = await request.get("/api/scope/00000000-0000-4000-8000-000000000000/pdf");
+  expect(response.status()).toBe(404);
 });
 
 test("asks for more detail when the brief is too short", async ({ page }, testInfo) => {

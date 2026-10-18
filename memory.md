@@ -13,7 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
-- **Current phase:** Steps 0–4 are done (the app works end to end locally). Step 5 (PDF) is next.
+- **Current phase:** Steps 0–5 are done (scope + PDF download work locally and in a production build). Step 6 (leads + email) is next.
 
 ## 2. Decisions log
 
@@ -46,6 +46,7 @@
 | 2026-10-19 | `POST /api/scope` logic lives in `handleScopeRequest` (`src/lib/scope/request.ts`), free of Next.js and unit-tested. The route only wires deps. Order: validate (400) → rate limit (429 + Retry-After) → generate → price → save (201 `{id}`). Errors: 422 injection, 503 + Retry-After when all models are busy, 502 no valid scope, 500 other | Every outcome is testable. A typo never uses up quota |
 | 2026-10-19 | `/s/[id]` awaits params inside `<Suspense>`; `loadScope` is `"use cache"` with `cacheLife("max")` when found and `"seconds"` when missing; `noindex, nofollow` | Scopes never change. Junk links cannot fill the cache. Briefs may be private |
 | 2026-10-19 | Rate limit: `SCOPE_LIMIT_PER_HOUR` (default 5) per salted IP hash | Protects the Groq daily token budget |
+| 2026-10-19 | **PDF:** `@react-pdf/renderer` on the server, `GET /api/scope/[id]/pdf` (attachment, `private, max-age=3600`). `renderScopePdf(stored, appUrl)` is reusable for the Step 6 email attachment. Same design language: Schibsted Grotesk (static TTFs + OFL in `src/lib/pdf/fonts/`), highlighter backgrounds, outlined price box, footer link back to the scope with page numbers. The original brief is **not** in the PDF | Briefs may hold non-Latin text the font can't render, and the scope is the deliverable |
 
 ## 3. How we work
 
@@ -65,7 +66,7 @@
 - [x] **2. LLM generation:** prompt, 3-model chain with cooldowns, Prompt Guard screen, fake LLM, 9 eval briefs, `npm run eval`
 - [x] **3. Database:** migration (`scopes`, `leads`, `scope_requests`, RLS on, explicit grants), `getDb()`, helpers, generated types, 10 integration tests
 - [x] **4. API and UI:** `/api/scope`, landing page with samples, `/s/[id]` result page, loading and error states, not-found page, 6 e2e tests (desktop and mobile)
-- [ ] **5. PDF:** `ScopeDocument` and `/api/scope/[id]/pdf`
+- [x] **5. PDF:** `ScopeDocument`, `renderScopePdf`, `/api/scope/[id]/pdf`, Download button, text-extraction tests (unpdf), e2e download
 - [ ] **6. Leads:** form, `/api/leads`, Resend email with the PDF attached
 - [ ] **7. Hardening:** rate limiting, input caps, honeypot, error states, mobile checks
 - [ ] **8. Ship:** Vercel deploy, Lighthouse, README case study (architecture, p95 latency, cost per run)
@@ -96,7 +97,11 @@
   fake LLM against the real DB, cleans up after itself). Screenshot review fixed: "$6 ,000" (tabular-nums widens commas
   in Schibsted), invisible swatches (dynamic Tailwind class), weak group-heading hierarchy, "a call notes" copy.
   Live smoke test with real Groq and Supabase: 201 in 3.6 s, the page renders, rows cleaned up.
-- **Next:** Step 5 (PDF). Later needed from the user: Resend API key and notify email (Step 6), Vercel account (Step 8).
+- Step 5: PDF renderer and route. Visual review over 5 renders fixed: missing footer, price/weeks overlap, double line
+  spacing, stranded group labels and headings. Production build check: fonts in the route's file trace; `next start` served
+  a 26 KB PDF in 0.64 s. Tests: 83 unit (PDF text checked via unpdf), 10 integration, 8 e2e (incl. download + 404).
+- **Next:** Step 6 (leads + email). **Needed from the user:** Resend API key and the email address that should receive leads.
+  Later: Vercel account (Step 8).
 
 ## 6. Eval results (for the case study)
 
@@ -185,4 +190,13 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - `"use cache"` arguments must be serializable: `loadScope(id)` calls `getDb()` inside instead of taking a client.
   `cacheLife` overloads need literal profiles, so use if/else and not a ternary.
 - `npm run e2e` starts its own dev server on :3100 with `SCOPER_FAKE_LLM=1` and needs `npx playwright install chromium` once.
+- **react-pdf layout traps** (each found by rendering, see the comments in `ScopeDocument.tsx`):
+  - `lineHeight` on `<Page>` makes an absolutely positioned `fixed` footer vanish.
+  - `lineHeight` only comes out right when set together with `fontSize` on the same style. Inherited, it is wrong (overlap or double spacing).
+  - `minPresenceAhead` did not keep headings with content. Put the heading inside the first item's `wrap={false}` View.
+  - To view a PDF, render it from a throwaway Vitest file and open it with the Read tool, which shows PDF pages.
+- **`tsx` cannot import `@react-pdf/renderer`** (resolves `@react-pdf/hyphenate/en-us` with CommonJS conditions). Next.js and Vitest
+  are fine. Don't write tsx scripts that render PDFs.
+- PDF fonts are read from disk: `outputFileTracingIncludes` in `next.config.ts` ships `src/lib/pdf/fonts/**` with `/api/**`.
+  Check `.next/server/app/api/scope/[id]/pdf/route.js.nft.json` after config changes.
 - Quote values with `<` or spaces in `.env` files (e.g. `RESEND_FROM`), or `source .env.local` breaks in bash.

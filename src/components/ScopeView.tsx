@@ -57,6 +57,17 @@ export function ScopeView({ stored }: { stored: StoredScope }) {
         </p>
       </section>
 
+      <div className="mt-6 flex flex-wrap gap-3">
+        {/* A plain link, not next/link: the browser should download the file, not navigate. */}
+        <a
+          href={`/api/scope/${stored.id}/pdf`}
+          download
+          className="rounded-md border-2 border-pen px-5 py-2.5 font-bold text-pen hover:bg-pen hover:text-white"
+        >
+          Download PDF
+        </a>
+      </div>
+
       <section aria-labelledby="features-heading" className={SECTION}>
         <h2 id="features-heading" className={H2}>
           What we&apos;d build

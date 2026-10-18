@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ScopeView } from "@/components/ScopeView";
-import { loadScope } from "./load";
+import { loadScope } from "@/lib/db/load-scope";
 
 export async function generateMetadata(props: PageProps<"/s/[id]">): Promise<Metadata> {
   const { id } = await props.params;

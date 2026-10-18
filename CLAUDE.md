@@ -6,7 +6,8 @@
 
 1. Read `memory.md`. It holds this project's decisions, workflow, build checklist and session log.
 2. Read `docs/plan.md` for the full approved plan.
-3. At the end of each build step: run `npm test`, `npm run typecheck` and `npm run lint`, then update `memory.md`
+3. At the end of each build step: run `npm test`, `npm run test:integration`, `npm run e2e`, `npm run typecheck` and
+   `npm run lint`, then update `memory.md`
    (checklist, session log, decisions, gotchas), then commit.
 
 ## Rules

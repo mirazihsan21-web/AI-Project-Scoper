@@ -13,7 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
-- **Current phase:** Steps 0–3 are done (Supabase is live). Step 4 (API and UI) is next.
+- **Current phase:** Steps 0–4 are done (the app works end to end locally). Step 5 (PDF) is next.
 
 ## 2. Decisions log
 
@@ -42,6 +42,10 @@
 | 2026-10-19 | **Browsers never talk to Supabase.** The server uses the **secret key** (`SUPABASE_SECRET_KEY`, `sb_secret_…`) through `getDb()` (`import "server-only"`). RLS is on with no policies, and anon/authenticated have **no grants** | Simplest secure model: the public API exposes nothing. Integration tests assert 42501 for the publishable key |
 | 2026-10-19 | Tables: `scopes` (uuid v4 id = share link; stores an `estimate` snapshot), `leads` (bigint id, `notified_at` for email retry), `scope_requests` (bigint id, **salted IP hash**) replacing the planned `rate_limits` | Unguessable links. Old quotes stay as shown even if rates change. Rate limiting counts every attempt, including failed ones, and never stores raw IPs |
 | 2026-10-19 | Deploy Vercel functions in **icn1 (Seoul)** to sit next to the database | The DB is in ap-northeast-2 |
+| 2026-10-19 | **Design: "marked up with highlighters".** Yellow/mint/lavender highlighter = must/should/could and means nothing else; pen blue `#2B44D6` = clickable; paper `#F6F7F4`, ink `#1E2638`; one family, **Schibsted Grotesk**; single left-aligned column about 720px; the price box is the only boxed element; one motion moment (must-haves get swept on arrival, static with reduced motion). Tokens live in `src/app/globals.css` | frontend-design skill: distinctive and tied to the subject (marking up a plan); avoids cream+serif, uppercase eyebrows, mono labels, card grids |
+| 2026-10-19 | `POST /api/scope` logic lives in `handleScopeRequest` (`src/lib/scope/request.ts`), free of Next.js and unit-tested. The route only wires deps. Order: validate (400) → rate limit (429 + Retry-After) → generate → price → save (201 `{id}`). Errors: 422 injection, 503 + Retry-After when all models are busy, 502 no valid scope, 500 other | Every outcome is testable. A typo never uses up quota |
+| 2026-10-19 | `/s/[id]` awaits params inside `<Suspense>`; `loadScope` is `"use cache"` with `cacheLife("max")` when found and `"seconds"` when missing; `noindex, nofollow` | Scopes never change. Junk links cannot fill the cache. Briefs may be private |
+| 2026-10-19 | Rate limit: `SCOPE_LIMIT_PER_HOUR` (default 5) per salted IP hash | Protects the Groq daily token budget |
 
 ## 3. How we work
 
@@ -60,7 +64,7 @@
 - [x] **1. Schema and pricing (TDD):** Zod scope schema plus a strict JSON-schema test, `estimate()` with table tests
 - [x] **2. LLM generation:** prompt, 3-model chain with cooldowns, Prompt Guard screen, fake LLM, 9 eval briefs, `npm run eval`
 - [x] **3. Database:** migration (`scopes`, `leads`, `scope_requests`, RLS on, explicit grants), `getDb()`, helpers, generated types, 10 integration tests
-- [ ] **4. API and UI:** `/api/scope`, landing page, `/s/[id]` result page, loading and error states
+- [x] **4. API and UI:** `/api/scope`, landing page with samples, `/s/[id]` result page, loading and error states, not-found page, 6 e2e tests (desktop and mobile)
 - [ ] **5. PDF:** `ScopeDocument` and `/api/scope/[id]/pdf`
 - [ ] **6. Leads:** form, `/api/leads`, Resend email with the PDF attached
 - [ ] **7. Hardening:** rate limiting, input caps, honeypot, error states, mobile checks
@@ -88,7 +92,11 @@
 - Step 3: the user ran `supabase login` and `link`. Secret key piped from `projects api-keys --reveal` into `.env.local`
   (never printed). Migration pushed; advisors show no warnings (only the expected "RLS no policy" and "unused index" info).
   Types generated. Integration tests: round-trips, FK rejection, rate limit, and the publishable key gets 42501 on every table.
-- **Next:** Step 4 (API and UI). Later needed from the user: Resend API key and notify email (Step 6), Vercel account (Step 8).
+- Step 4: API route, landing page, result page, not-found. Tests: 79 unit, 10 integration, 6 e2e (Playwright, desktop and Pixel 7,
+  fake LLM against the real DB, cleans up after itself). Screenshot review fixed: "$6 ,000" (tabular-nums widens commas
+  in Schibsted), invisible swatches (dynamic Tailwind class), weak group-heading hierarchy, "a call notes" copy.
+  Live smoke test with real Groq and Supabase: 201 in 3.6 s, the page renders, rows cleaned up.
+- **Next:** Step 5 (PDF). Later needed from the user: Resend API key and notify email (Step 6), Vercel account (Step 8).
 
 ## 6. Eval results (for the case study)
 
@@ -128,6 +136,9 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - Final brand name: TBD by the user ("Scoper" is a working name).
 - Email sender: `onboarding@resend.dev` until a domain is verified in Resend.
 - `scope_requests` grows forever. Add a cleanup later (e.g. pg_cron deleting rows older than 1 day).
+- Models sometimes mark more than 4 features as must (the yoga smoke test had 6), so the MVP is close to Full.
+  Consider tightening the prompt, or a soft cap in code, then re-run `npm run compare`.
+- Dark mode is not designed. The paper look is light-only for now.
 
 ## 8. Gotchas
 
@@ -166,4 +177,12 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - `npm run test:integration` hits the **real** project (loads `.env.local`) and deletes what it creates. Unit tests never touch the DB.
 - Modules that import `@/lib/db/client` at runtime cannot run in Vitest or scripts (`server-only` throws). Helpers take `db`
   as a parameter and import only the `Db` *type*.
+- **Tailwind only generates classes written out in full.** `bg-${x}` silently renders nothing; use a static map (see `SWATCH`).
+- **Schibsted Grotesk + `tabular-nums` widens commas** ("$6 ,000"). Don't use tabular figures for prices.
+- **Next 16 keeps the previous page in the DOM (hidden) after client navigation.** Scope e2e locators to the page (`article ...`).
+  Next's route announcer is also a `role="alert"`, so filter alerts by text.
+- **Locally, Next sets `x-forwarded-for: ::1`**, so local requests are rate limited as `::1`, not "unknown". e2e cleans up `::1`, `127.0.0.1`, `unknown`.
+- `"use cache"` arguments must be serializable: `loadScope(id)` calls `getDb()` inside instead of taking a client.
+  `cacheLife` overloads need literal profiles, so use if/else and not a ternary.
+- `npm run e2e` starts its own dev server on :3100 with `SCOPER_FAKE_LLM=1` and needs `npx playwright install chromium` once.
 - Quote values with `<` or spaces in `.env` files (e.g. `RESEND_FROM`), or `source .env.local` breaks in bash.

@@ -13,7 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
-- **Current phase:** Steps 0–2 are done, plus the sizing-variance fix. Step 3 (Supabase database) is next.
+- **Current phase:** Steps 0–3 are done (Supabase is live). Step 4 (API and UI) is next.
 
 ## 2. Decisions log
 
@@ -38,6 +38,10 @@
 | 2026-10-19 | Price low rounds **down**, high rounds **up** to $500, minimum $500 | The range never claims more precision than it has |
 | 2026-10-19 | Count and MVP rules are Zod `.refine`s, not `minItems`: **3–10 features** (prompt asks 4–8) and **at least one `must`**. A failure sends the request to the next model | Keeps the JSON Schema to keywords Groq documents for strict mode. 20b once returned 2 features and once 0 musts, which gave a $500 MVP |
 | 2026-10-19 | `temperature: 0.2` for all models (`src/lib/scope/groq.ts`) | Cut the same model's run-to-run spread from up to 1.6× to about 1.1× |
+| 2026-10-19 | **Supabase project `omallvxksmqowybyehws`** ("AI Project Scope", region **ap-northeast-2 Seoul**). Migrations live in `supabase/migrations/`, pushed with the pinned CLI (`supabase@2.119.0`, dev dependency) | User created the project and linked the CLI |
+| 2026-10-19 | **Browsers never talk to Supabase.** The server uses the **secret key** (`SUPABASE_SECRET_KEY`, `sb_secret_…`) through `getDb()` (`import "server-only"`). RLS is on with no policies, and anon/authenticated have **no grants** | Simplest secure model: the public API exposes nothing. Integration tests assert 42501 for the publishable key |
+| 2026-10-19 | Tables: `scopes` (uuid v4 id = share link; stores an `estimate` snapshot), `leads` (bigint id, `notified_at` for email retry), `scope_requests` (bigint id, **salted IP hash**) replacing the planned `rate_limits` | Unguessable links. Old quotes stay as shown even if rates change. Rate limiting counts every attempt, including failed ones, and never stores raw IPs |
+| 2026-10-19 | Deploy Vercel functions in **icn1 (Seoul)** to sit next to the database | The DB is in ap-northeast-2 |
 
 ## 3. How we work
 
@@ -55,7 +59,7 @@
 - [x] **0. Setup:** git, memory.md, CLAUDE.md, docs/plan.md, Next.js scaffold, Vitest, Playwright, `.env.example`
 - [x] **1. Schema and pricing (TDD):** Zod scope schema plus a strict JSON-schema test, `estimate()` with table tests
 - [x] **2. LLM generation:** prompt, 3-model chain with cooldowns, Prompt Guard screen, fake LLM, 9 eval briefs, `npm run eval`
-- [ ] **3. Database:** migration (`scopes`, `leads`, `rate_limits`, RLS on), server client, helpers
+- [x] **3. Database:** migration (`scopes`, `leads`, `scope_requests`, RLS on, explicit grants), `getDb()`, helpers, generated types, 10 integration tests
 - [ ] **4. API and UI:** `/api/scope`, landing page, `/s/[id]` result page, loading and error states
 - [ ] **5. PDF:** `ScopeDocument` and `/api/scope/[id]/pdf`
 - [ ] **6. Leads:** form, `/api/leads`, Resend email with the PDF attached
@@ -80,8 +84,11 @@
   - H4: 3–10 feature gate, sharper ai_assistant/matching definitions, "type by what the feature does" rule. This fixed the
     worst brief (2.55× → 1.46×).
   - The prompt example deliberately uses a food-delivery app, not an eval brief, to avoid overfitting.
-- **Next:** Step 3 (Supabase). **Needed from the user:** Supabase project URL and service-role key. Later: Resend key,
-  notify email, Vercel account.
+- The final overlap re-run was invalid (gpt-oss models locked out by the daily token limit). `compare` now logs and caps waits.
+- Step 3: the user ran `supabase login` and `link`. Secret key piped from `projects api-keys --reveal` into `.env.local`
+  (never printed). Migration pushed; advisors show no warnings (only the expected "RLS no policy" and "unused index" info).
+  Types generated. Integration tests: round-trips, FK rejection, rate limit, and the publishable key gets 42501 on every table.
+- **Next:** Step 4 (API and UI). Later needed from the user: Resend API key and notify email (Step 6), Vercel account (Step 8).
 
 ## 6. Eval results (for the case study)
 
@@ -120,6 +127,7 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
   (e.g. booking 32–64h) are higher than the old size midpoints. The hours per type in `PRICING_CONFIG` are assumptions; tune them.
 - Final brand name: TBD by the user ("Scoper" is a working name).
 - Email sender: `onboarding@resend.dev` until a domain is verified in Resend.
+- `scope_requests` grows forever. Add a cleanup later (e.g. pg_cron deleting rows older than 1 day).
 
 ## 8. Gotchas
 
@@ -149,4 +157,13 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
   hung a run for 15+ min. It takes about 16 min for `--runs 2` because Qwen allows about 1 scope/min. Do not run it alongside `npm run eval`:
   they share rate limits.
 - Do not put eval-brief scenarios into prompt examples (overfitting). Use other domains.
+- **Supabase (since 2026-04-28): new tables are NOT exposed to the Data API.** Every migration must `grant ... to service_role`
+  explicitly, or the server gets 42501 too.
+- Supabase CLI: `link` and `db push` work **without the DB password** ("Initialising login role" uses the CLI login). Use
+  `npx supabase migration new <name>` for filenames; `db push --linked --dry-run` first; then
+  `npx supabase gen types --lang typescript --linked --schema public > src/lib/db/types.ts` and
+  `npx supabase db advisors --linked --level info`.
+- `npm run test:integration` hits the **real** project (loads `.env.local`) and deletes what it creates. Unit tests never touch the DB.
+- Modules that import `@/lib/db/client` at runtime cannot run in Vitest or scripts (`server-only` throws). Helpers take `db`
+  as a parameter and import only the `Db` *type*.
 - Quote values with `<` or spaces in `.env` files (e.g. `RESEND_FROM`), or `source .env.local` breaks in bash.

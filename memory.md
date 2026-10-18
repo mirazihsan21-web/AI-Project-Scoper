@@ -112,8 +112,9 @@
   it (it only sends to the Resend account owner). The failure path worked as designed: lead saved, visitor got 201, error
   logged. The user then chose the Resend account email and a real email was accepted (lead 16 `notified_at` set).
   Tests: 97 unit (incl. HTML-escaping, honeypot and cap mutation checks), 11 integration, 8 e2e (incl. booking).
-- **Test data left in the DB on purpose:** scope `27020389-d323-40c5-8af0-7e7d8c0cec48` with leads 15 (not notified) and
-  16 (notified), so the user can check the email. Delete once they confirm it arrived.
+- The user confirmed the test email arrived (with the PDF). Test scope and leads deleted; DB is empty.
+- Added `.vscode/` (from Next's debugging guide): F5 "Run Scoper", "Run Scoper (fake AI + email)" (no Groq quota, no
+  real email), "Debug full stack (Chrome)"; recommended extensions (ESLint, Tailwind, Vitest, Playwright); workspace TypeScript.
 - Step 7: manual security review (the `security-review` skill needs a git remote). Fixed: cross-site text/plain posts, unbounded
   bodies, CRLF in lead names (test showed a `
 Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
@@ -193,6 +194,8 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - **axe in e2e:** `new AxeBuilder({ page }).exclude("[hidden]")`, because Next keeps the previous page hidden in the DOM.
 - **PDF bytes differ on every render** (react-pdf stamps a creation time to the second). Identical bytes 1+ s apart prove the cache works.
 - Playwright `page.route()` is the way to test UI error states without breaking the server (`tests/e2e/hardening.spec.ts`).
+- `npm run dev -- --inspect` prints "Starting inspector on 127.0.0.1:9229 failed: address already in use". That's harmless:
+  a helper process also tries the debug port. The debugger *is* on the process serving :3000 (start-server.js), so breakpoints work.
 - `npm run compare` caps any single rate-limit wait at 2 min and skips the sample. Before the cap, an 845 s `retry-after`
   hung a run for 15+ min. It takes about 16 min for `--runs 2` because Qwen allows about 1 scope/min. Do not run it alongside `npm run eval`:
   they share rate limits.

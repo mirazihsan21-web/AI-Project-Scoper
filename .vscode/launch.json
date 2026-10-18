@@ -1,0 +1,38 @@
+{
+  // Based on node_modules/next/dist/docs/01-app/02-guides/debugging.md.
+  // Run and Debug panel (Ctrl+Shift+D), pick a configuration, press F5. The app opens on http://localhost:3000.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Scoper",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev -- --inspect"
+    },
+    {
+      // Same app without spending Groq quota or sending real email: scopes come from a fixture (gym booking app).
+      "name": "Run Scoper (fake AI + email)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev -- --inspect",
+      "env": { "SCOPER_FAKE_LLM": "1", "SCOPER_FAKE_EMAIL": "1" }
+    },
+    {
+      // Breakpoints in both server code (API routes, pages) and browser code.
+      "name": "Debug full stack (Chrome)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
+      "args": ["dev"],
+      "runtimeArgs": ["--inspect"],
+      "skipFiles": ["<node_internals>/**"],
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "killOnServerStop": true,
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}"
+      }
+    }
+  ]
+}

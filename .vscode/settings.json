@@ -1,0 +1,5 @@
+{
+  // Use the project's TypeScript (which knows Next's generated route types), not VS Code's bundled one.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}

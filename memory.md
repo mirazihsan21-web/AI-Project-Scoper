@@ -13,7 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
-- **Current phase:** Step 0 (setup) is done. Step 1 (schema and pricing engine) is next.
+- **Current phase:** Steps 0–1 are done. Step 2 (LLM generation with Groq) is next.
 
 ## 2. Decisions log
 
@@ -29,6 +29,9 @@
 | 2026-10-19 | Hosting: **Vercel** | User's choice. Native Next.js support |
 | 2026-10-19 | Stack: Next.js 16 (App Router, Cache Components on), TS, Tailwind 4, Zod 4, groq-sdk, supabase-js, @react-pdf/renderer, Resend, Vitest, Playwright | From the PDF stack plus the decisions above |
 | 2026-10-19 | `@types/node` bumped to ^24 (scaffold had ^20) | Vitest 5 peer requirement. Matches Node 24 runtime |
+| 2026-10-19 | Integrations count toward **both** MVP and Full tiers. Milestone hours sum only their named features | Integrations are usually launch-critical. No feature↔integration mapping exists |
+| 2026-10-19 | Price low rounds **down**, high rounds **up** to $500, minimum $500 | The range never claims more precision than it has |
+| 2026-10-19 | Minimum-one-feature rule is a Zod `.refine`, not `minItems` | Keeps the JSON Schema to keywords Groq documents for strict mode |
 
 ## 3. How we work
 
@@ -44,7 +47,7 @@
 ## 4. Build checklist
 
 - [x] **0. Setup:** git, memory.md, CLAUDE.md, docs/plan.md, Next.js scaffold, Vitest, Playwright, `.env.example`
-- [ ] **1. Schema and pricing (TDD):** Zod scope schema plus a strict JSON-schema test, `estimate()` with table tests
+- [x] **1. Schema and pricing (TDD):** Zod scope schema plus a strict JSON-schema test, `estimate()` with table tests
 - [ ] **2. LLM generation:** prompt, `generateScope()` with retry and fallback, fake LLM, 8 eval briefs, `npm run eval`
 - [ ] **3. Database:** migration (`scopes`, `leads`, `rate_limits`, RLS on), server client, helpers
 - [ ] **4. API and UI:** `/api/scope`, landing page, `/s/[id]` result page, loading and error states
@@ -58,7 +61,9 @@
 ### 2026-10-19, session 1
 - Read the PDF. Picked project #1. Agreed the decisions in section 2 with the user. Wrote `docs/plan.md`.
 - Step 0: scaffolded Next.js 16.4.2 and installed deps. Added Vitest config, `.env.example` and this file.
-- **Next:** Step 1 (schema and pricing, no credentials needed).
+- Step 1: scope schema (`src/lib/scope/schema.ts`) and pricing engine (`src/lib/pricing/`), TDD.
+  13 unit tests. Mutation-checked: breaking strictness, rounding, contingency or name matching makes tests fail.
+- **Next:** Step 2. Needs `GROQ_API_KEY` in `.env.local` (copy `.env.example`).
 - **Blockers / needed from the user:** Groq API key; Supabase project (URL and service-role key); Resend API key
   and notify email; Vercel account.
 
@@ -76,4 +81,7 @@
 - **Strict mode needs every property in `required`** (use `nullable` for optional fields) **and
   `additionalProperties: false` on every object.** A unit test enforces both.
 - The `create-next-app` scaffold enables `cacheComponents`. Dynamic data reads must sit inside `<Suspense>` or be cached.
-- `.remember/` is local plugin state and is git-ignored.
+- `.remember/` is local plugin state. It is git-ignored and excluded from ESLint and tsconfig.
+- `npm run typecheck` runs `next typegen` first. Without it, `LayoutProps` and other Next globals are missing.
+- The Vitest config is `vitest.config.mts` (ESM). `.ts` triggers a Vite CommonJS warning because package.json has no `"type": "module"`.
+- Tests use their own round-number `PricingConfig`, so changing the assumed rates never breaks tests.

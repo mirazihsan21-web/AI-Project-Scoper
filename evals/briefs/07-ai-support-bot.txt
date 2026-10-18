@@ -1,0 +1,3 @@
+can you add an AI chatbot to our support site? we have ~300 help articles in Zendesk. bot should answer
+customers using our docs only, and hand over to a human agent in zendesk if it can't answer. we'd like
+to see which questions it fails on so we can write more articles. english and spanish.

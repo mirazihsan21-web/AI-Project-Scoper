@@ -1,0 +1,4 @@
+We sell industrial safety equipment (about 4,000 SKUs) and our current WooCommerce site is slow and outdated.
+We want to move to Shopify Plus. Key needs: B2B pricing per customer group, quote requests for bulk orders,
+and real-time stock from our ERP (Microsoft Dynamics NAV 2016, no modern API as far as we know).
+Product data currently lives in spreadsheets. SEO matters - we get most leads from Google and can't lose rankings.

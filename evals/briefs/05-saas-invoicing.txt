@@ -1,0 +1,8 @@
+We want to build a B2B SaaS for freelance designers to manage invoices.
+
+Core: create invoices from templates, send by email, accept card and bank payments, automatic reminders
+for overdue invoices, multi-currency (USD, EUR, GBP), and a dashboard showing outstanding and paid amounts.
+Teams: an agency owner can invite members with roles (admin, member, accountant read-only).
+Pricing: free tier (5 invoices/month) and a paid plan via subscription.
+Export to QuickBooks and Xero. Public API later.
+We need it to be secure (SOC2 eventually) and want a marketing site with a blog.

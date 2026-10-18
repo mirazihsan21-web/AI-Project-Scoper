@@ -1,0 +1,10 @@
+Call notes - Dr. Haque, dental clinic chain (4 clinics, ~20 dentists)
+- patients book by phone, receptionists overloaded
+- want online booking: pick clinic, dentist, treatment type, slot
+- treatment types have different durations (cleaning 30m, root canal 90m)
+- reminders by SMS 24h before, reduce no-shows (currently ~15%)
+- patients should see past visits + invoices
+- existing practice software: Dentrix (on-prem) - "would be great if bookings sync"
+- admin wants report of no-shows per clinic
+- data privacy is a concern, patient records
+- timeline: pilot in 1 clinic first

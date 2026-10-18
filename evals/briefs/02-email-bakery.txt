@@ -1,0 +1,15 @@
+Subject: Website + online orders for Sweet Crumbs Bakery
+
+Hi there,
+
+We're a family bakery with one shop. Right now people order custom cakes by phone and Instagram DMs and
+it's chaos - we lose orders and mix up dates. We'd love a site where customers can pick a cake, choose size,
+flavour and a message, pick a pickup date (we need 3 days notice), and pay a 50% deposit online.
+
+We also want a simple screen in the kitchen showing what's due each day. Our menu changes seasonally so
+we need to update it ourselves. Would be nice to send customers a text when the cake is ready.
+
+We use Square for our in-store POS, not sure if that matters.
+
+Thanks,
+Maria

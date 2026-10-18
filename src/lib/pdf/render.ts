@@ -2,6 +2,7 @@ import path from "node:path";
 import { Font, renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { createElement, type ReactElement } from "react";
 import type { StoredScope } from "@/lib/db/scopes";
+import { scopeUrl } from "@/lib/urls";
 import { ScopeDocument } from "./ScopeDocument";
 
 // Static TTFs (react-pdf cannot use the variable or woff2 web fonts). Traced for deployment in next.config.ts.
@@ -27,8 +28,10 @@ function registerFonts() {
 /** Renders the scope as an A4 PDF; `appUrl` builds the "view online" link in the footer. */
 export async function renderScopePdf(stored: StoredScope, appUrl: string): Promise<Uint8Array<ArrayBuffer>> {
   registerFonts();
-  const scopeUrl = `${appUrl.replace(/\/+$/, "")}/s/${stored.id}`;
-  const document = createElement(ScopeDocument, { stored, scopeUrl }) as unknown as ReactElement<DocumentProps>;
+  const document = createElement(ScopeDocument, {
+    stored,
+    scopeUrl: scopeUrl(appUrl, stored.id),
+  }) as unknown as ReactElement<DocumentProps>;
   return new Uint8Array(await renderToBuffer(document));
 }
 

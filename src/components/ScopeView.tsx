@@ -1,3 +1,4 @@
+import { LeadForm } from "@/components/LeadForm";
 import type { StoredScope } from "@/lib/db/scopes";
 import { formatMoneyRange, formatWeeks } from "@/lib/format";
 import {
@@ -58,6 +59,9 @@ export function ScopeView({ stored }: { stored: StoredScope }) {
       </section>
 
       <div className="mt-6 flex flex-wrap gap-3">
+        <a href="#book" className="rounded-md bg-pen px-5 py-2.5 font-bold text-white hover:bg-pen-dark">
+          Book a call
+        </a>
         {/* A plain link, not next/link: the browser should download the file, not navigate. */}
         <a
           href={`/api/scope/${stored.id}/pdf`}
@@ -191,6 +195,17 @@ export function ScopeView({ stored }: { stored: StoredScope }) {
           </ul>
         </section>
       </div>
+
+      <section id="book" aria-labelledby="book-heading" className={`${SECTION} scroll-mt-8 border-t-2 border-ink pt-8`}>
+        <h2 id="book-heading" className={H2}>
+          Book a call
+        </h2>
+        <p className="mt-3 max-w-[60ch] text-lg leading-relaxed">
+          Leave your details and we&apos;ll email you to find a time. This scope comes with your request, so you won&apos;t
+          have to explain the project twice.
+        </p>
+        <LeadForm scopeId={stored.id} />
+      </section>
 
       <details className={`${SECTION} border-t-2 border-ink pt-6`}>
         <summary className="cursor-pointer text-lg font-bold">The brief you pasted</summary>

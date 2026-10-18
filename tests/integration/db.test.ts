@@ -3,7 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db/client";
-import { insertLead, markLeadNotified } from "@/lib/db/leads";
+import { countLeadsForScope, insertLead, markLeadNotified } from "@/lib/db/leads";
 import { checkRateLimit, hashIp } from "@/lib/db/rate-limit";
 import { getScope, insertScope, type NewScope } from "@/lib/db/scopes";
 import type { Database } from "@/lib/db/types";
@@ -76,6 +76,16 @@ describe("leads", () => {
     const { data } = await db.from("leads").select("scope_id, email, notified_at").eq("id", leadId).single();
     expect(data).toMatchObject({ scope_id: scopeId, email: "ada@example.com" });
     expect(data!.notified_at).not.toBeNull();
+  });
+
+  it("counts leads per scope", async () => {
+    const scopeId = await createScope();
+    const other = await createScope();
+    await insertLead(db, { scopeId, name: "A", email: "a@example.com" });
+    await insertLead(db, { scopeId, name: "B", email: "b@example.com" });
+
+    expect(await countLeadsForScope(db, scopeId)).toBe(2);
+    expect(await countLeadsForScope(db, other)).toBe(0);
   });
 
   it("rejects a lead for a scope that does not exist", async () => {

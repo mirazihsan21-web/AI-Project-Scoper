@@ -21,6 +21,6 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     // Real env vars win over .env.local in Next.js, so these override it for the test server only.
-    env: { SCOPER_FAKE_LLM: "1", SCOPE_LIMIT_PER_HOUR: "1000" },
+    env: { SCOPER_FAKE_LLM: "1", SCOPER_FAKE_EMAIL: "1", SCOPE_LIMIT_PER_HOUR: "1000" },
   },
 });

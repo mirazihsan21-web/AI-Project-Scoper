@@ -51,6 +51,19 @@ test("turns a sample brief into a shareable scope page", async ({ page }, testIn
   const bytes = await readFile(await file.path());
   expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
   expect(bytes.length).toBeGreaterThan(10_000);
+
+  // Book a call: the lead is saved against this scope and (with the fake sender) marked as notified.
+  await page.getByRole("link", { name: "Book a call" }).click();
+  await page.getByLabel("Name", { exact: true }).fill("Ada Lovelace");
+  await page.getByLabel("Email", { exact: true }).fill("ada@example.com");
+  await page.getByRole("button", { name: "Book a call" }).click();
+  await expect(page.getByRole("status")).toHaveText(
+    "Thanks, Ada Lovelace. We have your request and will email ada@example.com to find a time.",
+  );
+  const { data: leads } = await db.from("leads").select("email, notified_at").eq("scope_id", createdScopeIds.at(-1)!);
+  expect(leads).toHaveLength(1);
+  expect(leads![0].email).toBe("ada@example.com");
+  expect(leads![0].notified_at).not.toBeNull();
 });
 
 test("returns 404 for the PDF of a scope that doesn't exist", async ({ request }) => {

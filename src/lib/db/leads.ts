@@ -24,6 +24,12 @@ export async function insertLead(db: Db, lead: NewLead): Promise<number> {
   return data.id;
 }
 
+export async function countLeadsForScope(db: Db, scopeId: string): Promise<number> {
+  const { count, error } = await db.from("leads").select("id", { count: "exact", head: true }).eq("scope_id", scopeId);
+  if (error) throw new Error(`countLeadsForScope failed: ${error.message}`);
+  return count ?? 0;
+}
+
 /** Records that the owner was emailed; leads with notified_at null still need a notification. */
 export async function markLeadNotified(db: Db, id: number): Promise<void> {
   const { error } = await db.from("leads").update({ notified_at: new Date().toISOString() }).eq("id", id);

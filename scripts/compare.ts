@@ -17,6 +17,7 @@ import type { Scope } from "@/lib/scope/schema";
 
 const BRIEFS_DIR = path.join(process.cwd(), "evals", "briefs");
 const RESULTS_DIR = path.join(process.cwd(), "evals", "results");
+const MAX_WAIT_MS = 120_000;
 
 type Sample = {
   brief: string;
@@ -78,6 +79,14 @@ async function main() {
               break;
             } catch (error) {
               if (error instanceof AllModelsBusyError) {
+                const seconds = Math.ceil(error.retryAfterMs / 1000);
+                // A long retry-after once hung a run for 15+ minutes; skip the sample instead.
+                if (error.retryAfterMs > MAX_WAIT_MS) {
+                  process.stdout.write("x");
+                  console.error(`\n${spec.id} ${file}: rate limited for ${seconds}s, skipping sample`);
+                  break;
+                }
+                console.error(`\n${spec.id} ${file}: rate limited, waiting ${seconds}s`);
                 await sleep(error.retryAfterMs + 500);
                 continue;
               }

@@ -103,6 +103,11 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 | h2-temp02 | + temperature 0.2 | 1.70× | 1.88× |
 | h3-catalog | catalog replaces sizes (temp 0.2) | 1.31× | 2.55× (20b: all ai_assistant, or 2 features) |
 | h4-catalog-tightened | + 3–10 feature gate, sharper type definitions | 1.46× | 1.69× |
+| final-overlap | same as h4, plus a range-overlap metric | 1.10× | 1.30× (8/8 briefs overlap) |
+
+**final-overlap is not a cross-model result.** Both gpt-oss models were locked out by the daily token limit (`retry-after` 396 s and
+845 s), so 16 of 17 samples are Qwen. It only shows that Qwen agrees with itself. The cross-model figure is still h4. Re-run
+`npm run compare -- --runs 2 --label overlap` on a fresh day, before any other evals.
 
 ## 7. Assumptions and open questions
 
@@ -126,6 +131,10 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - `npm run typecheck` runs `next typegen` first. Without it, `LayoutProps` and other Next globals are missing.
 - The Vitest config is `vitest.config.mts` (ESM). `.ts` triggers a Vite CommonJS warning because package.json has no `"type": "module"`.
 - Tests use their own round-number `PricingConfig`, so changing the assumed rates never breaks tests.
+- **Groq free-tier DAILY TOKEN LIMIT: 200K tokens/day per model (TPD), and it is NOT in the response headers.** At about 4k tokens
+  per scope, that is about 50 scopes/day per model, about 150/day across the chain. Going over gives a rolling lockout with
+  `retry-after` of 6–14 min. `npm run compare -- --runs 2` uses about 200k tokens, a whole day's budget. **Upgrade to Groq
+  Dev tier before launch** if traffic grows: cost is about $0.001/scope. (Limits: console.groq.com/docs/rate-limits)
 - **Groq free-tier limits (this key):** each model has 1000 requests/day and **8000 tokens/min**. A scope uses about 2.5–3k tokens,
   so roughly 3 scopes/min per gpt-oss model before switching. Qwen allows only **1000 output tokens/min**; a request whose
   `max_completion_tokens` exceeds that gets an instant 429 ("Request too large").
@@ -136,7 +145,8 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - Model cooldowns live in memory per server instance. On Vercel, separate instances do not share them, which is OK:
   an unknown cooldown just costs one fast (~100 ms) 429.
 - Eval files named `*-injection-guard*` are expected to be rejected by the guard; `*injection*` files get extra manipulation checks.
-- `npm run compare` takes about 16 min for `--runs 2` because Qwen allows about 1 scope/min. Do not run it alongside `npm run eval`:
+- `npm run compare` caps any single rate-limit wait at 2 min and skips the sample. Before the cap, an 845 s `retry-after`
+  hung a run for 15+ min. It takes about 16 min for `--runs 2` because Qwen allows about 1 scope/min. Do not run it alongside `npm run eval`:
   they share rate limits.
 - Do not put eval-brief scenarios into prompt examples (overfitting). Use other domains.
 - Quote values with `<` or spaces in `.env` files (e.g. `RESEND_FROM`), or `source .env.local` breaks in bash.

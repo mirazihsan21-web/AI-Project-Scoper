@@ -13,6 +13,7 @@
   structured-output AI. It also works as a lead magnet.
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
+- **GitHub (public):** https://github.com/mirazihsan21-web/AI-Project-Scoper (branch `main`)
 - **Current phase:** Steps 0–7 are done, plus the nature-theme redesign. Step 8 (deploy to Vercel + case study) is next.
 
 ## 2. Decisions log
@@ -55,6 +56,8 @@
 | 2026-10-19 | Security headers in `next.config.ts`: nosniff, `X-Frame-Options: DENY`, strict-origin referrer, Permissions-Policy, and a CSP **without script-src** (`frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`); `poweredByHeader: false` | A strict script CSP needs per-request nonces, which force every page to render dynamically. Revisit if third-party scripts are ever added |
 | 2026-10-19 | The PDF is cached per scope (`scopePdf` in `src/lib/pdf/cached.ts`, `"use cache"` + `cacheLife("max")`), reused by the download route and the lead email | A render is about 0.3 s CPU; hammering one link no longer costs anything |
 | 2026-10-19 | pg_cron job `purge-scope-requests` (03:17 UTC daily) deletes `scope_requests` older than 1 day (migration `…_purge_scope_requests.sql`) | Closes the "grows forever" item; hashed IPs are not kept longer than needed |
+| 2026-10-19 | **Public GitHub repo** `mirazihsan21-web/AI-Project-Scoper`. Commits are authored as **Md. Miraz Ihsan Chowdhury <227863178+mirazihsan21-web@users.noreply.github.com>** (repo-local git config) | User's choice: links commits to their GitHub profile without publishing a personal email |
+| 2026-10-19 | `Agency_Portfolio_Projects.pdf` (internal agency plan) is **local only**: removed from every commit before the first push and gitignored | User's choice: don't publish the agency's internal plan |
 | 2026-10-19 | Accept 5 "high" npm audit findings in the **lint toolchain only** (eslint-config-next → fast-glob → micromatch → braces, nested-glob DoS). Production deps: 0 vulnerabilities | Nothing is shipped; npm's "fix" is a downgrade to the Next 14 lint config. Re-check when eslint-config-next updates |
 | 2026-10-19 | **PDF:** `@react-pdf/renderer` on the server, `GET /api/scope/[id]/pdf` (attachment, `private, max-age=3600`). `renderScopePdf(stored, appUrl)` is reusable for the Step 6 email attachment. Same design language: Schibsted Grotesk (static TTFs + OFL in `src/lib/pdf/fonts/`), highlighter backgrounds, outlined price box, footer link back to the scope with page numbers. The original brief is **not** in the PDF | Briefs may hold non-Latin text the font can't render, and the scope is the deliverable |
 
@@ -127,6 +130,11 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   Reviewed at 375/820/1280/1680 px: no horizontal overflow; the sun was clipped on wide screens, so it was moved low
   (rising behind the hills). e2e now runs on a production build (works next to the user's open dev server).
   Tests: 105 unit, 11 integration, 34 e2e (axe contrast passes on the new palette).
+- Pushed to GitHub (user request). Before the push: scanned the full history (no secrets; personal emails only in commit
+  headers), rewrote the 13 unpushed commits' author to the GitHub noreply address and dropped the agency PDF from history
+  (`git filter-branch`, dates preserved), replaced the create-next-app README, merged the repo's own "Initial commit" (no
+  force-push). Verified via the GitHub API: commits linked to `mirazihsan21-web`; the PDF and `.env.local` return 404.
+  The local branch `backup/before-github-push` still holds the old history (old email + PDF). **Never push it**; delete it once happy.
 - **Next:** Step 8 (Vercel deploy + Lighthouse + README case study). **Needed from the user:** a Vercel account (and whether
   to use a custom domain).
 

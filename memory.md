@@ -14,7 +14,10 @@
 - **Demo moment:** paste a messy WhatsApp-style brief and get a clean PDF spec in about 20 seconds.
 - **Full plan:** `docs/plan.md`
 - **GitHub (public):** https://github.com/mirazihsan21-web/AI-Project-Scoper (branch `main`)
-- **Current phase:** Steps 0–7 are done, plus the nature-theme redesign. Step 8 (deploy to Vercel + case study) is next.
+- **Live (Vercel):** https://aiprojectscoper.vercel.app (project `aiprojectscoper`, scope `mirazihsan21-4921`, Hobby plan,
+  functions in `icn1` Seoul). Example scope: https://aiprojectscoper.vercel.app/s/afe0fd94-3462-4437-be68-0a835df8a3ac (keep it)
+- **Current phase:** All 8 steps are done. The app is live on Vercel. Remaining: connect GitHub → Vercel auto-deploys (needs a user
+  action) and the open items in section 7.
 
 ## 2. Decisions log
 
@@ -58,6 +61,8 @@
 | 2026-10-19 | pg_cron job `purge-scope-requests` (03:17 UTC daily) deletes `scope_requests` older than 1 day (migration `…_purge_scope_requests.sql`) | Closes the "grows forever" item; hashed IPs are not kept longer than needed |
 | 2026-10-19 | **Public GitHub repo** `mirazihsan21-web/AI-Project-Scoper`. Commits are authored as **Md. Miraz Ihsan Chowdhury <227863178+mirazihsan21-web@users.noreply.github.com>** (repo-local git config) | User's choice: links commits to their GitHub profile without publishing a personal email |
 | 2026-10-19 | `Agency_Portfolio_Projects.pdf` (internal agency plan) is **local only**: removed from every commit before the first push and gitignored | User's choice: don't publish the agency's internal plan |
+| 2026-10-19 | **Vercel:** functions pinned to `icn1` (Seoul) in `vercel.json`; Node `24.x`; `.vercelignore` keeps `.env*` and local-only files out of CLI uploads; env vars set with `--sensitive` for secrets (Groq, Supabase secret, Resend, salt) and a **fresh production `IP_HASH_SALT`**; `APP_URL=https://aiprojectscoper.vercel.app` (production only; previews fall back to their own origin); fake-mode and test-only vars not set; deployment protection left on (deployment URLs need Vercel login, the production domain is public) | Low latency to the DB; no local secrets uploaded; least exposure |
+| 2026-10-19 | `X-Robots-Tag: noindex, nofollow` on `/s/*` and `/api/*` (`next.config.ts`) | On production the `<meta robots>` tag was streamed into the body (not `<head>`, even for Googlebot), so crawlers might ignore it; PDFs had no protection |
 | 2026-10-19 | Accept 5 "high" npm audit findings in the **lint toolchain only** (eslint-config-next → fast-glob → micromatch → braces, nested-glob DoS). Production deps: 0 vulnerabilities | Nothing is shipped; npm's "fix" is a downgrade to the Next 14 lint config. Re-check when eslint-config-next updates |
 | 2026-10-19 | **PDF:** `@react-pdf/renderer` on the server, `GET /api/scope/[id]/pdf` (attachment, `private, max-age=3600`). `renderScopePdf(stored, appUrl)` is reusable for the Step 6 email attachment. Same design language: Schibsted Grotesk (static TTFs + OFL in `src/lib/pdf/fonts/`), highlighter backgrounds, outlined price box, footer link back to the scope with page numbers. The original brief is **not** in the PDF | Briefs may hold non-Latin text the font can't render, and the scope is the deliverable |
 
@@ -82,7 +87,7 @@
 - [x] **5. PDF:** `ScopeDocument`, `renderScopePdf`, `/api/scope/[id]/pdf`, Download button, text-extraction tests (unpdf), e2e download
 - [x] **6. Leads:** "Book a call" form, `/api/leads`, Resend email with PDF + reply-to, honeypot, 3-per-scope cap, e2e with fake sender, one real email sent
 - [x] **7. Hardening:** security review, JSON-only + size-capped bodies, header-injection guard, security headers, PDF cache, pg_cron purge, error boundary, e2e for every error message, axe scans, keyboard flow, 320px overflow, secret scan of the client bundle, npm audit
-- [ ] **8. Ship:** Vercel deploy, Lighthouse, README case study (architecture, p95 latency, cost per run)
+- [x] **8. Ship:** Vercel deploy (Seoul), live smoke test (scope, page, PDF, 415 guard, real lead email), Lighthouse, CLS + robots fixes, README case study with screenshots, numbers and a Mermaid architecture diagram
 
 ## 5. Session log
 
@@ -135,8 +140,18 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   (`git filter-branch`, dates preserved), replaced the create-next-app README, merged the repo's own "Initial commit" (no
   force-push). Verified via the GitHub API: commits linked to `mirazihsan21-web`; the PDF and `.env.local` return 404.
   The local branch `backup/before-github-push` still holds the old history (old email + PDF). **Never push it**; delete it once happy.
-- **Next:** Step 8 (Vercel deploy + Lighthouse + README case study). **Needed from the user:** a Vercel account (and whether
-  to use a custom domain).
+- Step 8: the user logged in the Vercel CLI (`vercel@62.2.0`). A project `aiprojectscoper` already existed (the user imported it,
+  with no env vars and no Git link); linked to it rather than creating a duplicate. Added env vars, `vercel.json` (icn1),
+  `.vercelignore`, deployed with `vercel deploy --prod`. Live smoke test: scope 201 in 6.3 s (server 3.7 s on gpt-oss-120b,
+  `x-vercel-id: bom1::icn1`), page + PDF OK, text/plain → 415, lead emailed. Lighthouse found **CLS 0.82** on the desktop
+  scope page (one-line Suspense fallback) → skeleton fallback → CLS 0, perf 98. Found the streamed `<meta robots>` → added
+  X-Robots-Tag. README rewritten as a case study with production screenshots (`docs/screenshots/`).
+  Production DB now holds the FitZone example scope and the user's own "Online Clothing Store" test (with 1 lead): leave both.
+- **Lighthouse (production):** home 97/100/100/100 mobile, 100/100/100/100 desktop; scope page 98/100/100/90 (mobile and
+  desktop); CLS 0 everywhere. Scope SEO 90 = `meta-description` audit (metadata is streamed for normal browsers).
+- **Next:** the user adds a GitHub Login Connection in Vercel (Account Settings → Authentication), then run
+  `npx vercel@62.2.0 git connect https://github.com/mirazihsan21-web/AI-Project-Scoper.git` so pushes to `main` auto-deploy.
+  Until then deploy with `npx vercel@62.2.0 deploy --prod`.
 
 ## 6. Eval results (for the case study)
 
@@ -177,7 +192,11 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - Email sender: `onboarding@resend.dev` until a domain is verified in Resend.
 - Models sometimes mark more than 4 features as must (the yoga smoke test had 6), so the MVP is close to Full.
   Consider tightening the prompt, or a soft cap in code, then re-run `npm run compare`.
-- Dark mode is not designed. The paper look is light-only for now.
+- Dark mode is not designed. The look is light-only for now.
+- **Deleted scopes stay viewable** until their cache entry expires (`loadScope` is `"use cache"` + `cacheLife("max")`). If a
+  delete/takedown feature is needed, add `cacheTag(`scope-${id}`)` in `loadScope` and call `revalidateTag` on delete.
+- Vercel **Hobby is for non-commercial use**. If Scoper is used as the agency's lead magnet, move the project to a Pro team.
+- Record the 60-second demo video for the portfolio case study (the PDF recommends it).
 - No job yet to resend lead emails where `notified_at` is null. Add one (e.g. a small cron route) if email failures appear.
 - The "View online" link in emails and PDFs uses `APP_URL`, which is localhost until deploy. Set it to the real domain in Vercel.
 
@@ -210,6 +229,14 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - Playwright `page.route()` is the way to test UI error states without breaking the server (`tests/e2e/hardening.spec.ts`).
 - `npm run dev -- --inspect` prints "Starting inspector on 127.0.0.1:9229 failed: address already in use". That's harmless:
   a helper process also tries the debug port. The debugger *is* on the process serving :3000 (start-server.js), so breakpoints work.
+- **`vercel link` writes to `.env.local`** (it appended `VERCEL_OIDC_TOKEN`) and to `.gitignore` (appended `.vercel` and a duplicate
+  `.env*` that re-ignored `.env.example`; removed). Check both files after linking.
+- **Git Bash rewrites args starting with `/`** into Windows paths: run `vercel api /v9/...` with `MSYS_NO_PATHCONV=1`.
+- `vercel git connect` fails with "add a Login Connection to your GitHub account first" until the Vercel account has GitHub linked.
+- Pipe env values into `vercel env add NAME target --sensitive --yes` via stdin (script in session notes), never `--value` on
+  the command line, so secrets don't land in shell history or logs.
+- Lighthouse runs fine with Playwright's Chromium: `CHROME_PATH=$LOCALAPPDATA/ms-playwright/chromium-*/chrome-win64/chrome.exe
+  npx lighthouse@13.5.0 <url> [--preset=desktop] --chrome-flags="--headless=new"`.
 - `npm run compare` caps any single rate-limit wait at 2 min and skips the sample. Before the cap, an 845 s `retry-after`
   hung a run for 15+ min. It takes about 16 min for `--runs 2` because Qwen allows about 1 scope/min. Do not run it alongside `npm run eval`:
   they share rate limits.

@@ -10,6 +10,8 @@ export async function generateMetadata(props: PageProps<"/s/[id]">): Promise<Met
   const stored = await loadScope(id);
   return {
     title: stored?.scope.projectTitle ?? "Scope not found",
+    // Shown in link previews when a scope is shared (WhatsApp, Slack and others get metadata in <head>).
+    description: stored?.scope.summary,
     // Briefs can hold private business details; share links work, search engines stay out.
     robots: { index: false, follow: false },
   };

@@ -22,6 +22,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // Scope pages and their PDFs hold private briefs. The <meta robots> tag is streamed into the body with the
+        // rest of the scope's metadata, which crawlers may ignore, so say it in a header that cannot be missed.
+        source: "/s/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/api/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
   },
   // The PDF renderer reads these fonts from disk at runtime, so they must ship with the API functions.

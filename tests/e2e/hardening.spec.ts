@@ -45,6 +45,14 @@ test.describe("security", () => {
     expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
     expect(headers["x-powered-by"]).toBeUndefined();
   });
+
+  test("tells crawlers not to index scope pages or PDFs", async ({ request }) => {
+    for (const path of ["/s/00000000-0000-4000-8000-000000000000", "/api/scope/00000000-0000-4000-8000-000000000000/pdf"]) {
+      const response = await request.get(path);
+      expect(response.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+    }
+    expect((await request.get("/")).headers()["x-robots-tag"]).toBeUndefined();
+  });
 });
 
 for (const [path, body] of [

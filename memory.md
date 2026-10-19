@@ -16,8 +16,8 @@
 - **GitHub (public):** https://github.com/mirazihsan21-web/AI-Project-Scoper (branch `main`)
 - **Live (Vercel):** https://aiprojectscoper.vercel.app (project `aiprojectscoper`, scope `mirazihsan21-4921`, Hobby plan,
   functions in `icn1` Seoul). Example scope: https://aiprojectscoper.vercel.app/s/afe0fd94-3462-4437-be68-0a835df8a3ac (keep it)
-- **Current phase:** All 8 steps are done. The app is live on Vercel. Remaining: connect GitHub → Vercel auto-deploys (needs a user
-  action) and the open items in section 7.
+- **Current phase:** All 8 steps are done. Live on Vercel, and **every push to `main` auto-deploys to production**. Remaining:
+  the open items in section 7.
 
 ## 2. Decisions log
 
@@ -149,9 +149,10 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   Production DB now holds the FitZone example scope and the user's own "Online Clothing Store" test (with 1 lead): leave both.
 - **Lighthouse (production):** home 97/100/100/100 mobile, 100/100/100/100 desktop; scope page 98/100/100/90 (mobile and
   desktop); CLS 0 everywhere. Scope SEO 90 = `meta-description` audit (metadata is streamed for normal browsers).
-- **Next:** the user adds a GitHub Login Connection in Vercel (Account Settings → Authentication), then run
-  `npx vercel@62.2.0 git connect https://github.com/mirazihsan21-web/AI-Project-Scoper.git` so pushes to `main` auto-deploy.
-  Until then deploy with `npx vercel@62.2.0 deploy --prod`.
+- The user connected the GitHub repo from the project's Settings → Git page (`vercel git connect` kept failing for lack of a
+  GitHub *login* connection on the Vercel account). Project link: `github mirazihsan21-web/AI-Project-Scoper`, production
+  branch `main`. Pushing this note was the first Git-triggered deployment.
+- **Deploying from now on: push to `main`** (production). Other branches get protected preview deployments.
 
 ## 6. Eval results (for the case study)
 

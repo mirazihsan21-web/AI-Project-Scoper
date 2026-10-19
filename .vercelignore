@@ -1,0 +1,11 @@
+# Never upload local secrets or local-only files with `vercel deploy`.
+# Production settings live in the Vercel project's environment variables.
+.env*
+!.env.example
+Agency_Portfolio_Projects.pdf
+.remember
+.vscode
+test-results
+playwright-report
+evals/results
+supabase/.temp

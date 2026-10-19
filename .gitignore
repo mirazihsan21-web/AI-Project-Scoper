@@ -53,3 +53,6 @@ next-env.d.ts
 
 # Internal agency planning document: kept locally, never published
 /Agency_Portfolio_Projects.pdf
+
+# Vercel CLI project link (local)
+.vercel

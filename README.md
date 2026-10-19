@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scoper: AI Project Scoper
 
-## Getting Started
+Paste a rough project brief (an idea, a client email, call notes or a WhatsApp chat) and get a structured scope back:
+features sorted by priority (must / should / could), integrations, risks, a delivery plan, and a price and timeline
+range for a first version and the full build. Visitors can download the scope as a PDF or book a call, which saves the
+lead and emails it to the owner with the PDF attached.
 
-First, run the development server:
+## How it works
+
+1. **Screen the brief.** Groq's `llama-prompt-guard-2` checks it for prompt-injection attempts (fails open if unavailable).
+2. **Generate the scope.** A chain of three Groq models (`gpt-oss-120b` → `gpt-oss-20b` → `qwen3.8-27b`) in strict
+   JSON-schema mode. A rate-limited or failing model hands over to the next one; the output is validated again with Zod.
+3. **Price it in code, not by the model.** The model only classifies each feature into a fixed catalogue
+   (booking, checkout, payments, AI assistant, …). Hours per type live in `src/lib/pricing/config.ts`, so prices are
+   consistent across models and easy to tune. The rates are assumptions until real project data replaces them.
+4. **Store and share.** Supabase stores scopes, leads and hashed rate-limit entries. Each scope gets an unguessable
+   share link and a server-rendered PDF.
+
+## Stack
+
+Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · Zod · Groq · Supabase (Postgres, RLS, pg_cron) ·
+@react-pdf/renderer · Resend · Vitest · Playwright
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # then fill in the keys (see below)
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable | Purpose |
+|----------|---------|
+| `GROQ_API_KEY` | Groq API key for scope generation and the injection guard |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | Server-side database access (the secret key never reaches the browser) |
+| `SUPABASE_PUBLISHABLE_KEY` | Only used by the integration tests, to prove the public API can't read the tables |
+| `IP_HASH_SALT` | Random string; visitor IPs are stored only as salted hashes |
+| `RESEND_API_KEY`, `RESEND_FROM`, `LEAD_NOTIFY_EMAIL` | Lead notification emails |
+| `APP_URL` | Public base URL for links in emails and PDFs |
+| `SCOPER_FAKE_LLM=1`, `SCOPER_FAKE_EMAIL=1` | Run without Groq quota or real email (used by e2e tests) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Database schema: `supabase/migrations/` (apply with the Supabase CLI: `npx supabase db push --linked`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+In VS Code, press F5 and pick **Run Scoper** or **Run Scoper (fake AI + email)**.
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | What it does |
+|---------|--------------|
+| `npm run dev` | Development server |
+| `npm test` | Unit tests (Vitest) |
+| `npm run test:integration` | Tests against the real Supabase project in `.env.local` |
+| `npm run e2e` | Browser tests (Playwright) against a production build, with fake AI and email |
+| `npm run eval` | Runs the sample briefs in `evals/briefs/` through the real model chain (uses Groq quota) |
+| `npm run compare` | Measures how consistently the three models price the same brief (uses Groq quota) |
+| `npm run typecheck`, `npm run lint` | Type and lint checks |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`memory.md` records every decision, measurement and gotcha from the build; `docs/plan.md` is the original plan.

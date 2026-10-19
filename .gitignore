@@ -50,3 +50,6 @@ next-env.d.ts
 
 # eval output
 /evals/results/
+
+# Internal agency planning document: kept locally, never published
+/Agency_Portfolio_Projects.pdf

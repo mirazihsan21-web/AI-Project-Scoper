@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
 import Link from "next/link";
@@ -36,6 +37,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <footer className={`w-full ${GUTTER} border-t border-rule py-8 text-sm text-moss`}>
           Estimates use assumed rates and are a starting point for a conversation, not a quote.
         </footer>
+        {/* Vercel Web Analytics: cookieless page views. Records only on Vercel deployments once enabled in the dashboard. */}
+        <Analytics />
       </body>
     </html>
   );

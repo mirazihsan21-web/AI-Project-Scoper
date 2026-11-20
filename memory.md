@@ -177,6 +177,13 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
 - Next 16.4.6 made the axe test flaky (2 failures in 5 runs): `document-title` missing on the scope page right after client
   navigation, because the streamed title lands after the content. The test now waits for the title; 4 full runs in a row pass.
   Tests: 105 unit, 11 integration, 40 e2e.
+- Vercel project avatar is now the leaf (user uploaded a 512 px render).
+- **Vercel Web Analytics:** `@vercel/analytics` 2.0.1, `<Analytics />` from `@vercel/analytics/next` in the root layout
+  (it wraps `useSearchParams` in Suspense itself, so Cache Components is fine; home is still prerendered). The CSP has no
+  script-src/connect-src, so nothing blocks it. Data only flows after Analytics is enabled in the Vercel dashboard.
+- **npm `allowScripts`** in package.json approves the postinstall of esbuild@0.28.2 and unrs-resolver@1.12.2 (exact versions,
+  so npm asks again after an upgrade). `npm audit` (dev included) shows 7 moderate in minimatch via typescript-eslint;
+  production deps: 0. `npm audit fix` (no --force) is available, not run.
 
 ## 6. Eval results (for the case study)
 

@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className={`relative z-10 w-full ${GUTTER} pt-5`}>
           <Link href="/" className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight text-forest">
             <LeafMark className="size-8" />
-            {BRAND_NAME}
+            Project {BRAND_NAME}
           </Link>
         </header>
         <div className="flex-1">{children}</div>

@@ -183,7 +183,7 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   script-src/connect-src, so nothing blocks it. Data only flows after Analytics is enabled in the Vercel dashboard.
 - **npm `allowScripts`** in package.json approves the postinstall of esbuild@0.28.2 and unrs-resolver@1.12.2 (exact versions,
   so npm asks again after an upgrade). `npm audit` (dev included) shows 7 moderate in minimatch via typescript-eslint;
-  production deps: 0. `npm audit fix` (no --force) is available, not run.
+  production deps: 0. The user then ran `npm audit fix` through Claude (lockfile only, typescript-eslint tree): `npm audit` 0.
 
 ## 6. Eval results (for the case study)
 

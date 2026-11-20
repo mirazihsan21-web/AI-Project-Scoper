@@ -72,6 +72,14 @@ test("uses the leaf mark for the favicon and home-screen icon, not the Next.js d
   expect([0, 1, 2].map((i) => ico.readUInt8(6 + 16 * i))).toEqual([16, 32, 48]);
 });
 
+test("has a 1200x630 link-preview image", async ({ page, request }) => {
+  await page.goto("/");
+  const ogHref = await page.locator('meta[property="og:image"]').getAttribute("content");
+  const png = await (await request.get(new URL(ogHref!).pathname + new URL(ogHref!).search)).body();
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+});
+
 for (const [path, body] of [
   ["/api/scope", { brief: BRIEF }],
   ["/api/leads", { scopeId: "00000000-0000-4000-8000-000000000000", name: "A", email: "a@example.com" }],
@@ -89,7 +97,7 @@ test.describe("error messages", () => {
   for (const [label, status, error] of [
     ["the injection guard rejects the brief", 422, "Your brief includes text that reads like instructions to the AI."],
     ["the visitor hits the hourly limit", 429, "You've reached this hour's limit for new scopes. Try again in about 12 minutes."],
-    ["every model is busy", 503, "Scoper is busy right now. Try again in 30 seconds."],
+    ["every model is busy", 503, "Project Scoper is busy right now. Try again in 30 seconds."],
     ["the server fails", 500, "Something went wrong on our side. Try again in a minute."],
   ] as const) {
     test(`shows the server's message when ${label}`, async ({ page }) => {
@@ -110,7 +118,7 @@ test.describe("error messages", () => {
     await page.getByLabel("Your project brief").fill(BRIEF);
     await page.getByRole("button", { name: "Scope my project" }).click();
 
-    await expect(page.getByRole("alert").filter({ hasText: "Couldn't reach Scoper." })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Couldn't reach Project Scoper." })).toBeVisible();
   });
 
   test("shows the lead form's error and keeps what the visitor typed", async ({ page }) => {
@@ -134,6 +142,8 @@ test.describe("accessibility", () => {
 
     await createScope(page);
     await expect(page.getByRole("heading", { name: "Delivery plan" })).toBeVisible();
+    // The title is streamed metadata and can land just after the content; wait for it so axe sees the finished page.
+    await expect(page).toHaveTitle(/ \| Project Scoper$/);
     await expectNoAccessibilityViolations(page);
 
     await page.goto("/s/00000000-0000-4000-8000-000000000000");

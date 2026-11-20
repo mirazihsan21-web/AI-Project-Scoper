@@ -12,7 +12,7 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: { default: `Project ${BRAND_NAME}`, template: `%s | ${BRAND_NAME}` },
+  title: { default: BRAND_NAME, template: `%s | ${BRAND_NAME}` },
   description:
     "Paste a client email, call notes or a chat. Get features by priority, integrations, risks, milestones and a price range.",
 };
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className={`relative z-10 w-full ${GUTTER} pt-5`}>
           <Link href="/" className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight text-forest">
             <LeafMark className="size-8" />
-            Project {BRAND_NAME}
+            {BRAND_NAME}
           </Link>
         </header>
         <div className="flex-1">{children}</div>

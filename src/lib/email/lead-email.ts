@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "@/lib/brand";
 import type { NewLead } from "@/lib/db/leads";
 import type { StoredScope } from "@/lib/db/scopes";
 import { formatMoneyRange, formatWeeks } from "@/lib/format";
@@ -28,7 +29,7 @@ export function buildLeadEmail({ lead, stored, scopeUrl }: LeadEmailInput) {
   const subject = `New call request from ${lead.name}: ${scope.projectTitle}`;
 
   const text = [
-    "New call request from Scoper",
+    `New call request from ${BRAND_NAME}`,
     "",
     ...filled.map(([label, value]) => `${label}: ${value}`),
     ...(lead.notes ? ["", "Notes:", lead.notes] : []),

@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "@/lib/brand";
 import { getDb } from "@/lib/db/client";
 import { countLeadsForScope, insertLead, markLeadNotified } from "@/lib/db/leads";
 import { getScope } from "@/lib/db/scopes";
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       const pdf = await scopePdf(stored.id, appUrl);
       if (!pdf) throw new Error(`Scope ${stored.id} disappeared before its PDF was rendered`);
       await emailSender()({
-        from: process.env.RESEND_FROM || "Scoper <onboarding@resend.dev>",
+        from: process.env.RESEND_FROM || `${BRAND_NAME} <onboarding@resend.dev>`,
         to,
         // Replying goes straight to the visitor.
         replyTo: lead.email,

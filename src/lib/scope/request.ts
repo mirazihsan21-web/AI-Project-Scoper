@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BRAND_NAME } from "@/lib/brand";
 import type { RateLimitResult } from "@/lib/db/rate-limit";
 import type { NewScope } from "@/lib/db/scopes";
 import { PRICING_CONFIG } from "@/lib/pricing/config";
@@ -77,7 +78,7 @@ export async function handleScopeRequest(body: unknown, deps: ScopeRequestDeps):
     }
     if (error instanceof AllModelsBusyError) {
       const seconds = Math.ceil(error.retryAfterMs / 1000);
-      return fail(503, `Scoper is busy right now. Try again in ${seconds} seconds.`, seconds);
+      return fail(503, `${BRAND_NAME} is busy right now. Try again in ${seconds} seconds.`, seconds);
     }
     if (error instanceof ScopeGenerationError) {
       console.error("Scope generation failed:", error.message);

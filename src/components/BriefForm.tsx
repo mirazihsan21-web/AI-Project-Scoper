@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { Sprout } from "@/components/nature";
+import { BRAND_NAME } from "@/lib/brand";
 import { SAMPLE_BRIEFS } from "@/lib/samples";
 
 const MIN = 20;
@@ -51,7 +52,7 @@ export function BriefForm() {
       }
       router.push(`/s/${data.id}`);
     } catch {
-      setError("Couldn't reach Scoper. Check your connection and try again.");
+      setError(`Couldn't reach ${BRAND_NAME}. Check your connection and try again.`);
       setPending(false);
     }
   }

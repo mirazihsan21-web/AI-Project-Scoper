@@ -1,4 +1,4 @@
-# Scoper: AI Project Scoper
+# Project Scoper
 
 Paste a rough project brief (an idea, a client email, call notes or a WhatsApp chat) and get a structured scope back:
 features sorted by priority, integrations, risks, a delivery plan, and a price and timeline range for a first version
@@ -20,7 +20,7 @@ owner with the PDF attached.
 ## The problem
 
 Clients rarely send a spec. They send a voice-note transcript, a forwarded email or a burst of WhatsApp messages, and
-someone has to turn that into features, risks and a price before the first call. Scoper does the first pass in a few
+someone has to turn that into features, risks and a price before the first call. Project Scoper does the first pass in a few
 seconds, so the call starts from a shared, written scope instead of from scratch.
 
 ## How it works

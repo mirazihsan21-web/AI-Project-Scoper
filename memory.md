@@ -163,8 +163,19 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   New e2e test checks the icon links and the `.ico` contents. Tests: 105 unit, 11 integration, 38 e2e.
 - `npm audit --omit=dev`: next 16.4.2 has moderate advisories (several in `use cache` / Cache Components, which this app uses).
   The fix is next 16.4.6. Not upgraded yet, waiting on the user.
-- The user asked for the home tab title to be just "Project Scoper" (no tagline). Scope pages keep `<project> | Scoper`.
+- The user asked for the home tab title to be just "Project Scoper" (no tagline), then for the header logo to read "Project Scoper".
 - Pushing from Claude's shell fails (no GitHub credential; `gh` is signed in to another account). The user pushes with `! git push origin main`.
+- Clean-up round (user approved items 1–5):
+  1. **next 16.4.2 → 16.4.6** (with eslint-config-next, exact pins). `npm audit --omit=dev`: 0 vulnerabilities.
+  2. **Link preview card:** `src/app/opengraph-image.tsx` (1200×630, leaf + name + one line + hills, Schibsted from
+     `src/lib/pdf/fonts`). Built at build time; scope pages inherit it. e2e checks the meta tag and PNG size.
+  3. **Brand is now "Project Scoper" everywhere:** `BRAND_NAME` in `src/lib/brand.ts`; the busy/offline messages, lead email,
+     default sender, PDF and README use it. Vercel's `RESEND_FROM` env var may still say "Scoper" (it overrides the default).
+  4. Deleted local branch `backup/before-github-push` (only difference from main was the agency PDF, still on disk and ignored).
+  5. Removed the unused create-next-app SVGs from `public/`.
+- Next 16.4.6 made the axe test flaky (2 failures in 5 runs): `document-title` missing on the scope page right after client
+  navigation, because the streamed title lands after the content. The test now waits for the title; 4 full runs in a row pass.
+  Tests: 105 unit, 11 integration, 40 e2e.
 
 ## 6. Eval results (for the case study)
 
@@ -291,5 +302,10 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - Quote values with `<` or spaces in `.env` files (e.g. `RESEND_FROM`), or `source .env.local` breaks in bash.
 - **`next build` can stop once with `SecurityFatalError`** ("affected by a known security vulnerability"). This is Next's own
   upgrade notice (`next/dist/lib/upgrade/nudge.js`), not a broken build. Running the same command again continues.
+- **Streamed metadata:** after client navigation the `<title>` can arrive after the page content. In e2e, wait with
+  `toHaveTitle` before axe scans or title checks.
+- `metadataBase` is not set on purpose: on Vercel, Next falls back to `VERCEL_PROJECT_PRODUCTION_URL` for the og:image URL.
+  Local builds warn and use localhost, which is fine.
+- **PowerShell 5 `Get-Content`/`Set-Content` corrupt UTF-8 files** (README "·" became "Â·"). Edit files with the Edit tool.
 - App icons are Next file conventions in `src/app/` (`icon.svg`, `favicon.ico`, `apple-icon.png`). If the leaf mark changes,
   update all three. The paths are in `LeafMark` (`src/components/nature.tsx`).

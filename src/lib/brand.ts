@@ -1,2 +1,2 @@
-// Working name; the user may rename the product later (see memory.md, open questions).
-export const BRAND_NAME = "Scoper";
+// Product name, used in the header, tab titles, PDF, emails and user-facing messages.
+export const BRAND_NAME = "Project Scoper";

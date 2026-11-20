@@ -12,7 +12,7 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: { default: `${BRAND_NAME}: turn a rough brief into a project scope`, template: `%s | ${BRAND_NAME}` },
+  title: { default: `Project ${BRAND_NAME}`, template: `%s | ${BRAND_NAME}` },
   description:
     "Paste a client email, call notes or a chat. Get features by priority, integrations, risks, milestones and a price range.",
 };

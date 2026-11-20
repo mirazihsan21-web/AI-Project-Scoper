@@ -163,6 +163,8 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   New e2e test checks the icon links and the `.ico` contents. Tests: 105 unit, 11 integration, 38 e2e.
 - `npm audit --omit=dev`: next 16.4.2 has moderate advisories (several in `use cache` / Cache Components, which this app uses).
   The fix is next 16.4.6. Not upgraded yet, waiting on the user.
+- The user asked for the home tab title to be just "Project Scoper" (no tagline). Scope pages keep `<project> | Scoper`.
+- Pushing from Claude's shell fails (no GitHub credential; `gh` is signed in to another account). The user pushes with `! git push origin main`.
 
 ## 6. Eval results (for the case study)
 

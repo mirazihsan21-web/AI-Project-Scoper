@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 3 28 28">
+  <style>
+    .stem { stroke: #2e7a44 }
+    .deep { fill: #2e7a44 }
+    @media (prefers-color-scheme: dark) {
+      .stem { stroke: #5bb06d }
+      .deep { fill: #5bb06d }
+    }
+  </style>
+  <path class="stem" d="M16 29V15" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M16 17C16 10 11 6 4 6c0 7 5 11 12 11Z" fill="#78b464"/>
+  <path class="deep" d="M16 14c0-6 4.5-10 12-10 0 6.5-4.5 10-12 10Z"/>
+</svg>

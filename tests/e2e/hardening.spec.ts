@@ -55,6 +55,23 @@ test.describe("security", () => {
   });
 });
 
+test("uses the leaf mark for the favicon and home-screen icon, not the Next.js default", async ({ page, request }) => {
+  await page.goto("/");
+  const svgHref = await page.locator('link[rel="icon"][type="image/svg+xml"]').getAttribute("href");
+  const svg = await (await request.get(svgHref!)).text();
+  expect(svg).toContain("#78b464"); // light leaf, from LeafMark
+  expect(svg).toContain("#2e7a44"); // dark leaf and stem
+
+  const appleHref = await page.locator('link[rel="apple-touch-icon"]').getAttribute("href");
+  const apple = await request.get(appleHref!);
+  expect(apple.headers()["content-type"]).toBe("image/png");
+
+  // The .ico fallback holds the leaf at 16, 32 and 48 px.
+  const ico = await (await request.get("/favicon.ico")).body();
+  expect(ico.readUInt16LE(4)).toBe(3);
+  expect([0, 1, 2].map((i) => ico.readUInt8(6 + 16 * i))).toEqual([16, 32, 48]);
+});
+
 for (const [path, body] of [
   ["/api/scope", { brief: BRIEF }],
   ["/api/leads", { scopeId: "00000000-0000-4000-8000-000000000000", name: "A", email: "a@example.com" }],

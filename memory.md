@@ -154,6 +154,16 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   branch `main`. Pushing this note was the first Git-triggered deployment.
 - **Deploying from now on: push to `main`** (production). Other branches get protected preview deployments.
 
+### 2026-11-21, session 2
+- The user saw the create-next-app favicon in the tab and asked for the leaf logo. Replaced it with the `LeafMark` art:
+  `src/app/icon.svg` (cropped to the mark, lighter green in dark mode so it shows on dark tabs), `src/app/favicon.ico`
+  (16/32/48 PNG entries for browsers without SVG favicons) and `src/app/apple-icon.png` (180 px on the `#f1f6ec` theme
+  background, since iOS fills transparency with black). The rasters came from a one-off sharp script that rendered the same paths.
+  The "Scoper" wordmark is left out of the icon because it can't be read at 16 px; the tab title already starts with "Scoper".
+  New e2e test checks the icon links and the `.ico` contents. Tests: 105 unit, 11 integration, 38 e2e.
+- `npm audit --omit=dev`: next 16.4.2 has moderate advisories (several in `use cache` / Cache Components, which this app uses).
+  The fix is next 16.4.6. Not upgraded yet, waiting on the user.
+
 ## 6. Eval results (for the case study)
 
 `npm run eval`: real Groq calls, results in `evals/results/latest.json` (git-ignored).
@@ -277,3 +287,7 @@ Max/min over 4–6 samples is itself noisy (about ±0.15 between identical runs)
 - PDF fonts are read from disk: `outputFileTracingIncludes` in `next.config.ts` ships `src/lib/pdf/fonts/**` with `/api/**`.
   Check `.next/server/app/api/scope/[id]/pdf/route.js.nft.json` after config changes.
 - Quote values with `<` or spaces in `.env` files (e.g. `RESEND_FROM`), or `source .env.local` breaks in bash.
+- **`next build` can stop once with `SecurityFatalError`** ("affected by a known security vulnerability"). This is Next's own
+  upgrade notice (`next/dist/lib/upgrade/nudge.js`), not a broken build. Running the same command again continues.
+- App icons are Next file conventions in `src/app/` (`icon.svg`, `favicon.ico`, `apple-icon.png`). If the leaf mark changes,
+  update all three. The paths are in `LeafMark` (`src/components/nature.tsx`).

@@ -170,7 +170,8 @@ Bcc:` name was accepted before the fix), PDF render DoS, missing headers, no
   2. **Link preview card:** `src/app/opengraph-image.tsx` (1200×630, leaf + name + one line + hills, Schibsted from
      `src/lib/pdf/fonts`). Built at build time; scope pages inherit it. e2e checks the meta tag and PNG size.
   3. **Brand is now "Project Scoper" everywhere:** `BRAND_NAME` in `src/lib/brand.ts`; the busy/offline messages, lead email,
-     default sender, PDF and README use it. Vercel's `RESEND_FROM` env var may still say "Scoper" (it overrides the default).
+     default sender, PDF and README use it. `RESEND_FROM` now says "Project Scoper" in `.env.local` and in Vercel production (the user ran a
+     script that did `env rm` + `env add --sensitive` + `deploy --prod`; only Production was changed, Preview not checked).
   4. Deleted local branch `backup/before-github-push` (only difference from main was the agency PDF, still on disk and ignored).
   5. Removed the unused create-next-app SVGs from `public/`.
 - Next 16.4.6 made the axe test flaky (2 failures in 5 runs): `document-title` missing on the scope page right after client
